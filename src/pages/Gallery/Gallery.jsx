@@ -1,6 +1,5 @@
 import { useState } from "react";
 import Navbar from "../../components/Navbar/Navbar";
-import Footer from "../../components/Footer/Footer";
 import HeroSection from "../../components/HeroSection";
 import { Grid3X3, Images } from "lucide-react";
 
@@ -124,7 +123,6 @@ export default function Gallery() {
         </div>
       )}
 
-      <Footer />
     </div>
   );
 }

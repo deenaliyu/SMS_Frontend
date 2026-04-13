@@ -1,5 +1,4 @@
 import Navbar from "../../../components/Navbar/Navbar";
-import Footer from "../../../components/Footer/Footer";
 import HeroSection from "../../../components/HeroSection";
 import { CalendarDays, Clock, MapPin, Search } from "lucide-react";
 import { useState } from "react";
@@ -150,7 +149,6 @@ export default function NewsEvents() {
         )}
       </div>
 
-      <Footer />
     </div>
   );
 }

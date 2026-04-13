@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/Navbar/Navbar";
-import Footer from "../../components/Footer/Footer";
 import HeroSection from "../../components/HeroSection";
 import { Clock, ArrowRight, Tag } from "lucide-react";
 
@@ -227,7 +226,6 @@ export default function Blog() {
         )}
       </div>
 
-      <Footer />
     </div>
   );
 }
