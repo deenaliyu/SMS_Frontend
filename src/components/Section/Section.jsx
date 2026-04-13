@@ -1,116 +1,184 @@
-/* eslint-disable no-unused-vars */
-/* eslint-disable react/no-unescaped-entities */
-import React from 'react';
-import Sec1 from '../../assets/Sec1.png';
-import Sec2 from '../../assets/Sec2.png';
-import Tutor1 from '../../assets/Tutor1.png';
-import Tutor2 from '../../assets/Tutor2.png';
-import Tutor3 from '../../assets/Tutor3.png';
-import SubscribeSection from '../SubscribeSection';
+import { Link } from "react-router-dom";
+import { Quote, ArrowRight } from "lucide-react";
 
-const Section = () => {
+const STATS = [
+  { value: "5,000+", label: "Students Enrolled" },
+  { value: "200+", label: "Qualified Staff" },
+  { value: "100+", label: "Happy Parents" },
+  { value: "25K+", label: "Alumni Worldwide" },
+];
+
+const TESTIMONIALS = [
+  {
+    quote: "WiSchool has truly changed my child's life. The dedication of the staff is unmatched and the results show!",
+    name: "Mrs. Fatima Danladi",
+    role: "Parent — SS2 Student",
+    color: "bg-green-600",
+  },
+  {
+    quote: "An amazing place for learning. My child has grown so much academically, socially, and in confidence.",
+    name: "Mr. Emmanuel Okafor",
+    role: "Parent — JSS1 Student",
+    color: "bg-slate-700",
+  },
+  {
+    quote: "A wonderful institution that truly cares about the well-being and future of every student.",
+    name: "Hajiya Zainab Sani",
+    role: "Parent — SSS3 Student",
+    color: "bg-green-800",
+  },
+];
+
+const TEAM = [
+  { name: "Dr. Adamu Yabagi", role: "Principal", initials: "AY" },
+  { name: "Mrs. Ngozi Eze", role: "Vice Principal", initials: "NE" },
+  { name: "Mr. Tunde Adebayo", role: "Head of Sciences", initials: "TA" },
+  { name: "Ms. Kemi Olatunji", role: "Head of Arts", initials: "KO" },
+];
+
+function Avatar({ initials, color = "#16a34a" }) {
   return (
-    <div className='container mt-20 mx-auto bg-white'>
-      <div className='grid grid-cols-1 md:grid-cols-3 md:px-36 text-center text-green-600 font-bold'>
-        <div>
-          <h1 className='text-[60px] text-[#A709B4]'>100+</h1>
-          <p className='text-[#323533] text-[16px]'>Parents and Guardian</p>
-        </div>
-        <div>
-          <h1 className='text-[60px] text-[#A709B4]'>100+</h1>
-          <p className='text-[#323533] text-[16px]'>Online Contents</p>
-        </div>
-        <div>
-          <h1 className='text-[60px] text-[#A709B4]'>+25k</h1>
-          <p className='text-[#323533] text-[16px]'>Graduated Students</p>
+    <div
+      className="w-20 h-20 rounded-2xl mx-auto mb-4 flex items-center justify-center text-white font-bold text-xl shadow-md"
+      style={{ background: `linear-gradient(135deg, ${color}, ${color}aa)` }}
+    >
+      {initials}
+    </div>
+  );
+}
+
+export default function Section() {
+  return (
+    <div className="bg-white">
+      {/* Stats bar */}
+      <div className="bg-green-600 py-10">
+        <div className="max-w-7xl mx-auto px-5 lg:px-10">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center text-white">
+            {STATS.map(({ value, label }) => (
+              <div key={label}>
+                <p className="text-3xl sm:text-4xl font-extrabold">{value}</p>
+                <p className="text-green-200 text-sm mt-1">{label}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
-      <div className='flex flex-col md:flex-row items-center justify-between mt-12 gap-12'>
-        <div className='w-full md:w-1/2'>
-          <img src={Sec1} alt='' className='w-full rounded-lg shadow-lg' />
-        </div>
-        <div className='text-left md:w-1/2 space-y-6'>
-          <h2 className='text-5xl font-bold text-black'>We are Experts</h2>
-          <h3 className='text-3xl font-semibold text-black'>Learning Institution</h3>
-          <p className='text-gray-700 text-xl'>Education Excellence and Student Empowerment meet.</p>
-          <button className='bg-green-600 text-white px-8 py-2 rounded-md text-lg hover:bg-green-700 transition duration-300'>Apply now</button>
+      {/* About blurb */}
+      <div className="max-w-7xl mx-auto px-5 lg:px-10 py-20">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+          <div>
+            <p className="text-green-600 text-sm font-semibold uppercase tracking-widest mb-3">Why Choose WiSchool</p>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-5 leading-tight">
+              We Are Experts in<br />Quality Education
+            </h2>
+            <p className="text-gray-500 text-base leading-relaxed mb-6">
+              WiSchool Academy combines a rigorous academic curriculum with character development, technology integration, and holistic student support. We believe every child deserves an education that unlocks their unique potential.
+            </p>
+            <ul className="space-y-3 mb-8">
+              {[
+                "Accredited by the Ministry of Education",
+                "State-of-the-art science and technology labs",
+                "Dedicated counselling and support services",
+                "Active parent-teacher partnership programs",
+              ].map((item) => (
+                <li key={item} className="flex items-center gap-3 text-sm text-gray-700">
+                  <span className="w-5 h-5 rounded-full bg-green-100 border border-green-300 flex items-center justify-center flex-shrink-0">
+                    <span className="w-2 h-2 rounded-full bg-green-600" />
+                  </span>
+                  {item}
+                </li>
+              ))}
+            </ul>
+            <Link
+              to="/about"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 text-white font-semibold rounded-xl hover:bg-green-700 transition-colors text-sm"
+            >
+              Learn More About Us <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+
+          {/* Placeholder image area */}
+          <div className="relative">
+            <div className="w-full h-80 rounded-3xl bg-gradient-to-br from-green-50 to-green-100 border border-green-200 flex items-center justify-center">
+              <div className="text-center">
+                <div className="w-20 h-20 bg-green-600 rounded-2xl mx-auto mb-4 flex items-center justify-center">
+                  <span className="text-3xl text-white">🎓</span>
+                </div>
+                <p className="text-green-800 font-semibold">WiSchool Campus</p>
+                <p className="text-green-600/70 text-sm">Kano, Nigeria</p>
+              </div>
+            </div>
+            <div className="absolute -bottom-4 -right-4 bg-white rounded-2xl shadow-lg border border-gray-100 px-5 py-3">
+              <p className="text-2xl font-extrabold text-green-600">15+</p>
+              <p className="text-xs text-gray-500">Years of Excellence</p>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className='flex flex-col md:flex-row items-center justify-between mt-12 gap-12'>
-        <div className='text-left md:w-1/2 space-y-6'>
-          <h4 className='text-2xl font-semibold text-green-600'>Blog</h4>
-          <div className='border-b-4 w-16 border-green-600'></div>
-          <h3 className='text-4xl font-bold text-black'>Every Student Matters</h3>
-          <p className='text-gray-700 text-xl'>Empowering Administration to Champion Individual Growth, Inclusivity, and Students Across the School Community.</p>
-          <button className='bg-green-600 text-white px-8 py-4 rounded-md text-lg hover:bg-green-700 transition duration-300'>Learn More</button>
-        </div>
-        <div className='w-full md:w-1/2'>
-          <img src={Sec2} alt='' className='w-full rounded-lg shadow-lg' />
-        </div>
-      </div>
-
-      <div className='mt-12 text-left text-black'>
-        <h2 className='text-5xl font-bold'>What the Parents Are Saying</h2>
-        <h1 className='text-4xl font-semibold mt-4'>Every Client Matters</h1>
-        <p className='text-gray-700 text-xl mt-6'>Empowering Individuals to Prioritize Individual Needs, Foster Inclusivity, and Deliver Exceptional Services Across the Board.</p>
-      </div>
-
-      {/* Review Cards */}
-      <div className='mt-12 grid grid-cols-1 md:grid-cols-3 gap-8'>
-        <div className='bg-green-400 text-white shadow-lg p-8 rounded-lg text-left'>
-          <p className='italic text-lg'>"This school has truly changed my child's life. The dedication of the staff is unmatched!"</p>
-          <h3 className='text-xl font-semibold mt-6'>- Jane Doe</h3>
-        </div>
-        <div className='bg-purple-500 text-white shadow-lg p-8 rounded-lg text-left'>
-          <p className='italic text-lg'>"An amazing place for learning. My child has grown so much academically and socially."</p>
-          <h3 className='text-xl font-semibold mt-6'>- John Smith</h3>
-        </div>
-        <div className='bg-gray-400 text-white shadow-lg p-8 rounded-lg text-left'>
-          <p className='italic text-lg'>"A wonderful institution that truly cares about the well-being and future of its students."</p>
-          <h3 className='text-xl font-semibold mt-6'>- Sarah Lee</h3>
+      {/* Testimonials */}
+      <div className="bg-gray-50 py-20">
+        <div className="max-w-7xl mx-auto px-5 lg:px-10">
+          <div className="text-center mb-12">
+            <p className="text-green-600 text-sm font-semibold uppercase tracking-widest mb-2">Testimonials</p>
+            <h2 className="text-3xl font-extrabold text-gray-900">What Parents Are Saying</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {TESTIMONIALS.map(({ quote, name, role, color }) => (
+              <div key={name} className={`${color} text-white rounded-2xl p-6 shadow-md`}>
+                <Quote className="w-8 h-8 text-white/30 mb-4" />
+                <p className="text-sm leading-relaxed mb-6 text-white/90 italic">"{quote}"</p>
+                <div>
+                  <p className="font-semibold text-sm">{name}</p>
+                  <p className="text-xs text-white/60">{role}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Team Section */}
-      <div className='mt-12 px-4 text-left'>
-        {/* Title Section */}
-        <h1 className='text-3xl font-bold text-black'>Team</h1>
-        <h5 className='text-lg text-green-500 mt-1'>Our Top Tutors!</h5>
-        <p className='text-gray-700 font-bold text-lg mt-2 max-w-2xl'>
-          Recognizing and Celebrating Excellence in Teaching to Inspire Student Achievements and Success
-        </p>
-
-        {/* Tutors Grid */}
-        <div className='mt-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4'>
-          {[Tutor1, Tutor2, Tutor3, Tutor1].map((tutor, index) => (
-            <div key={index} className='bg-white shadow-md rounded-lg p-4 text-left'>
-              <img src={tutor} alt='' className='w-full rounded-lg mb-3' />
-              <h1 className='text-xl font-semibold text-green-600 mt-2'>Julien Berger</h1>
-              <h2 className='text-md text-gray-700'>Profession</h2>
+      {/* Team */}
+      <div className="py-20 max-w-7xl mx-auto px-5 lg:px-10">
+        <div className="text-center mb-12">
+          <p className="text-green-600 text-sm font-semibold uppercase tracking-widest mb-2">Leadership</p>
+          <h2 className="text-3xl font-extrabold text-gray-900 mb-2">Our Top Educators</h2>
+          <p className="text-gray-500 text-sm max-w-md mx-auto">
+            Recognizing excellence in teaching to inspire student achievement and success.
+          </p>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          {TEAM.map(({ name, role, initials }, i) => (
+            <div key={name} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 text-center hover:shadow-md transition-shadow">
+              <Avatar initials={initials} color={["#16a34a", "#1d4ed8", "#7c3aed", "#0891b2"][i]} />
+              <h3 className="font-bold text-gray-900 text-sm">{name}</h3>
+              <p className="text-gray-500 text-xs mt-0.5">{role}</p>
             </div>
           ))}
         </div>
       </div>
 
-
-
-      <section className={`bg-[#E8ECE9] mt-12 flex h-[50vh] py-52  flex-col items-center justify-center text-center w-[100%]`}>
-        <p className='text-[#09B451] text-[16px] font-semibold'>Newsletter</p>
-        <h2 className="text-[25px] py-4 mb-4 text-[#001B07] font-bold">Subscribe to Our Newsletter</h2>
-        <div className="mt-4 w-[50%] rounded bg-[#F9F9F9] flex justify-center">
-          <input
-            type="email"
-            placeholder="Your email"
-            className="p-3 outline-0 rounded-l w-full"
-          />
-          <button className="bg-[#09B451] text-white p-3">Subscribe</button>
+      {/* Newsletter CTA */}
+      <div className="bg-green-600 py-16">
+        <div className="max-w-2xl mx-auto px-5 text-center">
+          <h2 className="text-2xl font-extrabold text-white mb-2">Stay Connected</h2>
+          <p className="text-green-100 text-sm mb-6">Subscribe to receive school news, events, and announcements directly to your inbox.</p>
+          <div className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+            <input
+              type="email"
+              placeholder="Enter your email address"
+              className="flex-1 px-4 py-3 rounded-xl border-0 text-sm focus:outline-none focus:ring-2 focus:ring-white/50"
+            />
+            <button
+              type="button"
+              className="px-5 py-3 bg-white text-green-700 font-bold rounded-xl hover:bg-green-50 transition-colors text-sm cursor-pointer flex-shrink-0"
+            >
+              Subscribe
+            </button>
+          </div>
         </div>
-      </section>
+      </div>
     </div>
   );
-};
-
-export default Section;
-
+}

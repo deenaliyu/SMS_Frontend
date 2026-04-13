@@ -1,59 +1,150 @@
-/* eslint-disable no-unused-vars */
-import React from 'react';
+import { Link } from "react-router-dom";
+import { GraduationCap, Mail, Phone, MapPin, Facebook, Twitter, Instagram, Linkedin } from "lucide-react";
 
-const Footer = () => {
-    return (
-        <div className="bg-amber-100 text-gray-900 py-12 px-6">
-            <div className="container mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
-                {/* Column 1 */}
-                <div>
-                    <h1 className="text-3xl text-purple-500 font-bold">WiSchool</h1>
-                    <p className="mt-2 text-gray-400">We are not here to sell you products, we sell value through our expertise.</p>
-                </div>
+const QUICK_LINKS = [
+  { to: "/about", label: "About Us" },
+  { to: "/academics", label: "Academics" },
+  { to: "/admission", label: "Admission" },
+  { to: "/news-event", label: "News & Events" },
+  { to: "/blog", label: "Blog" },
+  { to: "/contact", label: "Contact" },
+];
 
-                {/* Column 2 */}
-                <div>
-                    <h4 className="text-xl font-semibold">Address</h4>
-                    <p className="text-gray-400 mt-1">40, Opedi Road, Steamledge, Kano</p>
-                    <h4 className="text-xl font-semibold mt-4">Phone:</h4>
-                    <p className="text-gray-400 mt-1">+234 000 000 000</p>
-                    <h4 className="text-xl font-semibold mt-4">Email:</h4>
-                    <p className="text-gray-400 mt-1">steamledge@gmail.com</p>
-                </div>
+const SOCIAL = [
+  { Icon: Facebook, href: "https://facebook.com", label: "Facebook" },
+  { Icon: Twitter, href: "https://twitter.com", label: "Twitter" },
+  { Icon: Instagram, href: "https://instagram.com", label: "Instagram" },
+  { Icon: Linkedin, href: "https://linkedin.com", label: "LinkedIn" },
+];
 
-                {/* Column 3 */}
-                <div>
-                    <h3 className="text-xl font-semibold">Company</h3>
-                    <p className="mt-2 text-gray-400 cursor-pointer hover:text-green-400">About us</p>
-                    <p className="mt-2 text-gray-400 cursor-pointer hover:text-green-400">News/Event</p>
-                    <p className="mt-2 text-gray-400 cursor-pointer hover:text-green-400">Blog</p>
-                    <p className="mt-2 text-gray-400 cursor-pointer hover:text-green-400">School Calendar</p>
-                </div>
+export default function Footer() {
+  return (
+    <footer className="bg-gray-950 text-gray-300">
+      <div className="max-w-7xl mx-auto px-5 lg:px-10 pt-16 pb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
+          {/* Brand */}
+          <div className="sm:col-span-2 lg:col-span-1">
+            <div className="flex items-center gap-2.5 mb-4">
+              <div className="w-9 h-9 rounded-xl bg-green-600 flex items-center justify-center flex-shrink-0">
+                <GraduationCap className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <p className="font-bold text-white leading-tight">WiSchool</p>
+                <p className="text-[9px] uppercase tracking-widest text-green-500/60">Scholastify360</p>
+              </div>
             </div>
-
-            {/* Subscribe Section */}
-            <div className="mt-8 text-center">
-                <h2 className="text-xl font-semibold">Subscribe to get the latest updates</h2>
-                <form className="flex flex-col items-center justify-center md:flex-row mt-4 gap-4">
-                    <input
-                        type="email"
-                        placeholder="Enter your email"
-                        className="w-full md:w-1/3 px-4 py-2 text-gray-900 rounded-md bg-white text-center focus:outline-none"
-                    />
-                    <button type="submit" className="bg-green-500 hover:bg-green-600 text-white text-center px-6 py-2 rounded-md transition">
-                        Subscribe
-                    </button>
-                </form>
+            <p className="text-sm text-gray-400 leading-relaxed mb-5">
+              Empowering students with world-class education, innovative programs, and a community that nurtures every learner to reach their full potential.
+            </p>
+            <div className="flex gap-3">
+              {SOCIAL.map(({ Icon, href, label }) => (
+                <a
+                  key={label}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={label}
+                  className="w-8 h-8 rounded-lg bg-gray-800 hover:bg-green-600 flex items-center justify-center transition-colors"
+                >
+                  <Icon className="w-4 h-4" />
+                </a>
+              ))}
             </div>
+          </div>
 
-            {/* Footer Bottom */}
-            <div className="mt-8 border-t border-gray-700 pt-4 text-left">
-                <h2 className="text-gray-400">
-                    Powered by <span className="text-green-400 cursor-pointer hover:underline">Scholastify360</span>
-                </h2>
-            </div>
+          {/* Quick links */}
+          <div>
+            <h3 className="text-white font-semibold mb-4 text-sm uppercase tracking-wider">Quick Links</h3>
+            <ul className="space-y-2.5">
+              {QUICK_LINKS.map(({ to, label }) => (
+                <li key={to}>
+                  <Link
+                    to={to}
+                    className="text-sm text-gray-400 hover:text-green-400 transition-colors"
+                  >
+                    {label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Portals */}
+          <div>
+            <h3 className="text-white font-semibold mb-4 text-sm uppercase tracking-wider">Portals</h3>
+            <ul className="space-y-2.5">
+              {[
+                { to: "/student-login", label: "Student Login" },
+                { to: "/admin-login", label: "Admin Login" },
+                { to: "/student-admission", label: "Apply Now" },
+                { to: "/student-registration", label: "Register" },
+                { to: "/payment", label: "Online Payment" },
+              ].map(({ to, label }) => (
+                <li key={to}>
+                  <Link to={to} className="text-sm text-gray-400 hover:text-green-400 transition-colors">
+                    {label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Contact */}
+          <div>
+            <h3 className="text-white font-semibold mb-4 text-sm uppercase tracking-wider">Contact Us</h3>
+            <ul className="space-y-3">
+              <li className="flex items-start gap-3 text-sm text-gray-400">
+                <MapPin className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                15 Education Crescent, Nassarawa GRA, Kano State, Nigeria
+              </li>
+              <li className="flex items-center gap-3 text-sm text-gray-400">
+                <Phone className="w-4 h-4 text-green-500 flex-shrink-0" />
+                +234 801 234 5678
+              </li>
+              <li className="flex items-center gap-3 text-sm text-gray-400">
+                <Mail className="w-4 h-4 text-green-500 flex-shrink-0" />
+                info@wischool.edu.ng
+              </li>
+            </ul>
+          </div>
         </div>
-    );
-};
 
-export default Footer;
+        {/* Newsletter */}
+        <div className="border-t border-gray-800 pt-8 mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4 max-w-xl">
+            <div className="flex-1">
+              <p className="text-white font-semibold mb-0.5">Subscribe to our newsletter</p>
+              <p className="text-xs text-gray-500">Get updates on events, announcements, and news.</p>
+            </div>
+            <div className="flex gap-2 flex-shrink-0">
+              <input
+                type="email"
+                placeholder="Your email"
+                className="px-4 py-2 bg-gray-800 border border-gray-700 text-sm text-gray-300 rounded-xl focus:outline-none focus:border-green-500 placeholder:text-gray-600 w-48"
+              />
+              <button
+                type="button"
+                className="px-4 py-2 bg-green-600 text-white text-sm font-semibold rounded-xl hover:bg-green-700 transition-colors cursor-pointer"
+              >
+                Subscribe
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom */}
+        <div className="border-t border-gray-800 pt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <p className="text-xs text-gray-600">
+            © {new Date().getFullYear()} WiSchool Academy. All rights reserved.
+          </p>
+          <p className="text-xs text-gray-600">
+            Powered by{" "}
+            <span className="text-green-500 font-medium">Scholastify360</span>
+            {" "}·{" "}
+            <span className="text-gray-700">Built by Steamledge Limited</span>
+          </p>
+        </div>
+      </div>
+    </footer>
+  );
+}

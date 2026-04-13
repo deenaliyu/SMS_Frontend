@@ -1,4 +1,4 @@
-const DB_KEY = "sms_local_db_v1";
+const DB_KEY = "sms_local_db_v2";
 
 const DEFAULT_DB = {
   students: [],
@@ -7,62 +7,57 @@ const DEFAULT_DB = {
   financePayments: [],
   events: [],
   messageThreads: [],
+  notices: [],
+  invoices: [],
+  adminUsers: [],
+  subjects: [],
+  cmsPages: [],
+  schoolProfile: null,
   logs: [],
 };
+
+export const DB_COLLECTIONS = Object.freeze({
+  STUDENTS: "students",
+  PARENTS: "parents",
+  TEACHERS: "teachers",
+  FINANCE_PAYMENTS: "financePayments",
+  EVENTS: "events",
+  MESSAGE_THREADS: "messageThreads",
+  NOTICES: "notices",
+  INVOICES: "invoices",
+  ADMIN_USERS: "adminUsers",
+  SUBJECTS: "subjects",
+  CMS_PAGES: "cmsPages",
+  SCHOOL_PROFILE: "schoolProfile",
+  LOGS: "logs",
+});
 
 function isBrowser() {
   return typeof window !== "undefined";
 }
 
 function cloneDefaultDb() {
-  return {
-    students: [],
-    parents: [],
-    teachers: [],
-    financePayments: [],
-    events: [],
-    messageThreads: [],
-    logs: [],
-  };
+  return { ...DEFAULT_DB };
 }
 
 export function readDb() {
-  if (!isBrowser()) {
-    return cloneDefaultDb();
-  }
+  if (!isBrowser()) return cloneDefaultDb();
 
   const raw = window.localStorage.getItem(DB_KEY);
-
-  if (!raw) {
-    return cloneDefaultDb();
-  }
+  if (!raw) return cloneDefaultDb();
 
   try {
     const parsed = JSON.parse(raw);
-
-    if (!parsed || typeof parsed !== "object") {
-      return cloneDefaultDb();
-    }
-
-    return {
-      ...cloneDefaultDb(),
-      ...parsed,
-    };
+    if (!parsed || typeof parsed !== "object") return cloneDefaultDb();
+    return { ...cloneDefaultDb(), ...parsed };
   } catch {
     return cloneDefaultDb();
   }
 }
 
 export function writeDb(nextDb) {
-  if (!isBrowser()) {
-    return nextDb;
-  }
-
-  const safe = {
-    ...cloneDefaultDb(),
-    ...(nextDb || {}),
-  };
-
+  if (!isBrowser()) return nextDb;
+  const safe = { ...cloneDefaultDb(), ...(nextDb || {}) };
   window.localStorage.setItem(DB_KEY, JSON.stringify(safe));
   return safe;
 }
@@ -76,14 +71,19 @@ export function getCollection(collectionName) {
 export function setCollection(collectionName, records) {
   const db = readDb();
   const safeRecords = Array.isArray(records) ? records : [];
-
-  const nextDb = {
-    ...db,
-    [collectionName]: safeRecords,
-  };
-
-  writeDb(nextDb);
+  writeDb({ ...db, [collectionName]: safeRecords });
   return safeRecords;
+}
+
+export function getSingleRecord(key) {
+  const db = readDb();
+  return db[key] || null;
+}
+
+export function setSingleRecord(key, value) {
+  const db = readDb();
+  writeDb({ ...db, [key]: value });
+  return value;
 }
 
 export function addLog({ action, entity, summary = "", payload = null }) {
@@ -100,34 +100,22 @@ export function addLog({ action, entity, summary = "", payload = null }) {
   };
 
   const nextLogs = [entry, ...logs].slice(0, 1000);
-
-  writeDb({
-    ...db,
-    logs: nextLogs,
-  });
-
+  writeDb({ ...db, logs: nextLogs });
   return entry;
 }
 
 export function seedCollection(collectionName, seedRecords = [], getKey) {
   const existing = getCollection(collectionName);
+  if (existing.length > 0) return existing;
 
-  if (existing.length > 0 && (!seedRecords || seedRecords.length === 0)) {
-    return existing;
-  }
+  if (!seedRecords || seedRecords.length === 0) return existing;
 
-  const keyGetter = typeof getKey === "function" ? getKey : (entry) => entry?.id;
+  const keyGetter = typeof getKey === "function" ? getKey : (e) => e?.id;
   const map = new Map();
 
-  [...(seedRecords || []), ...existing].forEach((record) => {
+  seedRecords.forEach((record) => {
     const key = keyGetter(record);
-
-    if (key === undefined || key === null || key === "") {
-      map.set(`fallback-${map.size}`, record);
-      return;
-    }
-
-    if (!map.has(key)) {
+    if (key != null && key !== "" && !map.has(key)) {
       map.set(key, record);
     }
   });
@@ -154,15 +142,5 @@ export function replaceRecords(collectionName, updater) {
 export function getDbSnapshot() {
   return readDb();
 }
-
-export const DB_COLLECTIONS = Object.freeze({
-  STUDENTS: "students",
-  PARENTS: "parents",
-  TEACHERS: "teachers",
-  FINANCE_PAYMENTS: "financePayments",
-  EVENTS: "events",
-  MESSAGE_THREADS: "messageThreads",
-  LOGS: "logs",
-});
 
 export { DEFAULT_DB };

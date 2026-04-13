@@ -1,79 +1,122 @@
-/* eslint-disable no-unused-vars */
-import './Navbar.css'
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { FaReact, FaSearch, FaBars, FaTimes } from 'react-icons/fa';
-import { BiSearch } from 'react-icons/bi';
+import { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { GraduationCap, Menu, X } from "lucide-react";
 
-const Navbar = () => {
-    const [menuOpen, setMenuOpen] = useState(false);
+const NAV_LINKS = [
+  { to: "/", label: "Home" },
+  { to: "/academics", label: "Academics" },
+  { to: "/about", label: "About Us" },
+  { to: "/admission", label: "Admission" },
+  { to: "/gallery", label: "Gallery" },
+  { to: "/news-event", label: "News & Events" },
+  { to: "/blog", label: "Blog" },
+  { to: "/contact", label: "Contact" },
+];
 
-    return (
-        <nav className='bg-[#FFFFFF] shadow fixed w-full top-0 left-0 z-50'>
-            <div className='mx-auto flex justify-between items-center lg:px-16 md:px-10 py-4'>
-                {/* Logo */}
-                <div className='flex items-center text-xl font-bold gap-[11px]'>
-                    <img src='/logo.png' className='w-[44px] h-[44px]' />
-                    <img src='/frameLogo.png' className='w-[117px] h-[36px]' />
-                    {/* <span className='text-purple-600 text-lg'>WiSchool</span> */}
-                </div>
+export default function Navbar() {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const location = useLocation();
 
-                {/* Desktop Menu */}
-                <div className='hidden text-[#989E99] text[16px] md:flex items-center gap-6'>
-                    <Link to='/' className='hover:text-[#09B451]'>Home</Link>
-                    <Link to='/academics' className='hover:text-[#09B451]'>Academics</Link>
-                    <Link to='/about' className='hover:text-[#09B451]'>About us</Link>
-                    <Link to='/admission' className='hover:text-[#09B451]'>Admission</Link>
-                    {/* <Link to='/payment' className='hover:text-[#09B451]'>Online Payment</Link> */}
-                    <Link to='/gallery' className='hover:text-[#09B451]'>Gallery</Link>
-                    <Link to='/news-event' className='hover:text-[#09B451]'>News/Event</Link>
-                    <Link to='/blog' className='hover:text-[#09B451]'>Blog</Link>
-                    <Link to='/contact' className='hover:text-[#09B451]'>Contact us</Link>
-                </div>
+  const isActive = (to) =>
+    to === "/" ? location.pathname === "/" : location.pathname.startsWith(to);
 
-                {/* Right Section (Search & Login) */}
-                <div className='hidden md:flex items-center gap-[20px]'>
-                    <BiSearch className='w-5 h-5 text-[#B40916] cursor-pointer' />
-                    <Link to='/student-login'>
-                        <button className='bg-[#09B451] text-[#001B07] text-[16px] px-[28px] py-[10px] rounded hover:bg-green-700 transition duration-300'>
-                            Login
-                        </button>
-                    </Link>
-                </div>
+  return (
+    <nav className="bg-white shadow-sm fixed w-full top-0 left-0 z-50 border-b border-gray-100">
+      <div className="max-w-7xl mx-auto flex justify-between items-center px-5 lg:px-10 py-4">
+        {/* Logo */}
+        <Link to="/" className="flex items-center gap-2.5 flex-shrink-0">
+          <div className="w-9 h-9 rounded-xl bg-green-600 flex items-center justify-center">
+            <GraduationCap className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <p className="font-bold text-gray-900 leading-tight text-base">WiSchool</p>
+            <p className="text-[9px] uppercase tracking-widest text-green-600/70 leading-none">Academy</p>
+          </div>
+        </Link>
 
-                {/* Mobile Menu Toggle Button */}
-                <div className='md:hidden'>
-                    <button onClick={() => setMenuOpen(!menuOpen)}>
-                        {menuOpen ? <FaTimes className='w-6 h-6 text-purple-600' /> : <FaBars className='w-6 h-6 text-purple-600' />}
-                    </button>
-                </div>
+        {/* Desktop nav */}
+        <div className="hidden md:flex items-center gap-1">
+          {NAV_LINKS.map(({ to, label }) => (
+            <Link
+              key={to}
+              to={to}
+              className={`
+                px-3 py-1.5 rounded-lg text-sm font-medium transition-colors
+                ${isActive(to)
+                  ? "text-green-700 bg-green-50"
+                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"}
+              `}
+            >
+              {label}
+            </Link>
+          ))}
+        </div>
+
+        {/* CTA */}
+        <div className="hidden md:flex items-center gap-3">
+          <Link
+            to="/admin-login"
+            className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+          >
+            Admin
+          </Link>
+          <Link
+            to="/student-login"
+            className="px-4 py-2 bg-green-600 text-white text-sm font-semibold rounded-xl hover:bg-green-700 transition-colors shadow-sm shadow-green-900/20"
+          >
+            Student Login
+          </Link>
+        </div>
+
+        {/* Mobile toggle */}
+        <button
+          type="button"
+          onClick={() => setMenuOpen((o) => !o)}
+          className="md:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
+          aria-label="Toggle menu"
+        >
+          {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+        </button>
+      </div>
+
+      {/* Mobile menu */}
+      {menuOpen && (
+        <div className="md:hidden bg-white border-t border-gray-100 shadow-lg">
+          <div className="px-4 py-3 space-y-0.5">
+            {NAV_LINKS.map(({ to, label }) => (
+              <Link
+                key={to}
+                to={to}
+                onClick={() => setMenuOpen(false)}
+                className={`
+                  block px-4 py-2.5 rounded-xl text-sm font-medium transition-colors
+                  ${isActive(to)
+                    ? "text-green-700 bg-green-50"
+                    : "text-gray-600 hover:bg-gray-50"}
+                `}
+              >
+                {label}
+              </Link>
+            ))}
+            <div className="pt-3 pb-1 border-t border-gray-100 mt-2 flex flex-col gap-2">
+              <Link
+                to="/admin-login"
+                onClick={() => setMenuOpen(false)}
+                className="block text-center py-2 rounded-xl text-sm font-medium text-gray-600 border border-gray-200 hover:bg-gray-50"
+              >
+                Admin Login
+              </Link>
+              <Link
+                to="/student-login"
+                onClick={() => setMenuOpen(false)}
+                className="block text-center py-2 rounded-xl text-sm font-semibold text-white bg-green-600 hover:bg-green-700"
+              >
+                Student Login
+              </Link>
             </div>
-
-            {/* Mobile Menu */}
-            {menuOpen && (
-                <div className='md:hidden absolute top-16 left-0 w-full bg-white shadow-lg flex flex-col items-center py-4 space-y-4'>
-                    <Link to='/' className='hover:text-green-600' onClick={() => setMenuOpen(false)}>Home</Link>
-                    <Link to='/academics' className='hover:text-green-600' onClick={() => setMenuOpen(false)}>Academics</Link>
-                    <Link to='/about' className='hover:text-green-600' onClick={() => setMenuOpen(false)}>About us</Link>
-                    <Link to='/admission' className='hover:text-green-600' onClick={() => setMenuOpen(false)}>Admission</Link>
-                    <Link to='/payment' className='hover:text-green-600' onClick={() => setMenuOpen(false)}>Online Payment</Link>
-                    <Link to='/gallery' className='hover:text-green-600' onClick={() => setMenuOpen(false)}>Gallery</Link>
-                    <Link to='/news-event' className='hover:text-green-600' onClick={() => setMenuOpen(false)}>News/Event</Link>
-                    <Link to='/blog' className='hover:text-green-600' onClick={() => setMenuOpen(false)}>Blog</Link>
-                    <Link to='/contact' className='hover:text-green-600' onClick={() => setMenuOpen(false)}>Contact us</Link>
-
-                    <div className='flex items-center gap-3'>
-                        <FaSearch className='w-5 h-5 text-purple-500 cursor-pointer' />
-                        <Link to='/student-login'>
-                            <button className='bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition duration-300'>
-                                Login
-                            </button>
-                        </Link>
-                    </div>
-                </div>
-            )}
-        </nav>
-    );
-};
-
-export default Navbar;
+          </div>
+        </div>
+      )}
+    </nav>
+  );
+}

@@ -1,49 +1,70 @@
-import React from 'react'
-import { Link } from 'react-router-dom'
 import PropTypes from "prop-types";
-// import HeroSection from "../components/HeroSection";
+import { Link } from "react-router-dom";
 
-const HeroSection = ({ title, text, image, btn, about }) => {
-    return (
-        <div className="relative h-[80vh] sm:pb-15 mt-15 bg-[#001B07] items-center text-[#F5F5F5] flex text-right  justify-center">
-            <img
-                src={image}
-                alt="Contact Us"
-                className="absolute inset-0 w-full absolute h-full object-cover opacity-50"
-            />
-            <div className="relative text-justify p-18">
-                <h1 className="text-[50px] font-bold">{title}</h1>
-                <p className="mt-2 text-[24px]">{text}</p>
-                {btn && (
-                    <div className="flex lg:flex-row flex-col md:flex-row gap-5 mt-6">
-                        <Link to='/student-admission'><button className="bg-[#09B451] rounded text-[#001B07] py-2 px-5">Student Admission</button></Link>
-                        <Link to='/student-registration'><button className="bg-[#FFFFFF] rounded text-[#09B451] py-2 px-5">Student Registration</button></Link>
-                    </div>
-                )}
-                {about && (
-                    <p className='font-bold text-[#F5F5F5] text-[26px] mt-10'>Explore our offerings below</p>
-                )}
+/**
+ * HeroSection — shared page hero used by About, Academics, Blog, Contact, Gallery, News.
+ *
+ * Props:
+ *  title     – main heading
+ *  text      – subtitle paragraph
+ *  image     – background image URL
+ *  btn       – show admission CTA buttons
+ *  compact   – shorter height variant
+ */
+export default function HeroSection({ title, text, image, btn = false, compact = false }) {
+  return (
+    <div
+      className={`relative flex items-end ${compact ? "min-h-[280px]" : "min-h-[420px] sm:min-h-[500px]"} mt-[65px]`}
+      style={{
+        backgroundImage: image ? `url(${image})` : undefined,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundColor: image ? undefined : "#0d3321",
+      }}
+    >
+      {/* Overlay */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20" />
+
+      {/* Content */}
+      <div className="relative z-10 w-full max-w-7xl mx-auto px-5 lg:px-10 pb-12 pt-20">
+        <div className="max-w-2xl">
+          <p className="text-green-400 text-sm font-semibold uppercase tracking-widest mb-3">
+            WiSchool Academy
+          </p>
+          <h1 className="text-3xl sm:text-5xl font-bold text-white leading-tight mb-4">
+            {title}
+          </h1>
+          {text && (
+            <p className="text-gray-300 text-base sm:text-lg leading-relaxed mb-6 max-w-xl">
+              {text}
+            </p>
+          )}
+          {btn && (
+            <div className="flex flex-wrap gap-3">
+              <Link
+                to="/student-admission"
+                className="px-6 py-3 bg-green-600 text-white font-semibold rounded-xl hover:bg-green-700 transition-colors shadow-lg shadow-green-900/40 text-sm"
+              >
+                Apply for Admission
+              </Link>
+              <Link
+                to="/student-registration"
+                className="px-6 py-3 bg-white/15 border border-white/30 text-white font-semibold rounded-xl hover:bg-white/25 transition-colors text-sm backdrop-blur-sm"
+              >
+                Student Registration
+              </Link>
             </div>
+          )}
         </div>
-    )
+      </div>
+    </div>
+  );
 }
 
 HeroSection.propTypes = {
   title: PropTypes.string.isRequired,
-  text: PropTypes.string.isRequired,
-  image: PropTypes.string.isRequired,
+  text: PropTypes.string,
+  image: PropTypes.string,
   btn: PropTypes.bool,
-  about: PropTypes.bool,
+  compact: PropTypes.bool,
 };
-
-<HeroSection
-  title="Welcome to WiSchool"
-  text="Empowering students for a brighter future."
-  image="/assets/hero.jpg"
-  btn={true}
-  about={true}
-/>
-
-export default HeroSection
-
-

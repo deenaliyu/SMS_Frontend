@@ -1,134 +1,156 @@
-import React from 'react';
-import HeroSection from '../../../components/HeroSection';
+import Navbar from "../../../components/Navbar/Navbar";
+import Footer from "../../../components/Footer/Footer";
+import HeroSection from "../../../components/HeroSection";
+import { CalendarDays, Clock, MapPin, Search } from "lucide-react";
+import { useState } from "react";
 
-const events = [
+const EVENTS = [
   {
-    month: 'March',
-    date: '15',
-    title: 'Parent-Teacher Conference',
+    id: 1,
+    month: "JUN",
+    day: "15",
+    title: "Parent-Teacher Conference",
+    time: "9:00 AM – 12:00 PM",
+    location: "Main School Hall",
     description:
-      "Meet with your child's teachers to discuss their progress, goals and academic achievements. This is a valuable opportunity for parents to connect with teachers and support their child's learning journey.",
-    time: '<strong>Time:</strong> 9:00 AM - 12:00PM',
+      "Meet with your child's teachers to discuss academic progress, set goals, and strengthen the home-school partnership. All parents are encouraged to attend.",
+    category: "Academic",
   },
   {
-    month: 'March',
-    date: '15',
-    title: 'Science Fair Exhibition',
+    id: 2,
+    month: "JUN",
+    day: "22",
+    title: "Science Fair Exhibition",
+    time: "10:00 AM – 3:00 PM",
+    location: "Science Block & Courtyard",
     description:
-      'Join us for an interactive showcase of the creative and innovative projects of our students. From biology experiments to engineering challenges, explore the wonders of science and celebrate our students.',
-    time: '<strong>Time:</strong> 9:00 AM - 12:00PM',
+      "Students showcase innovative projects across biology, chemistry, physics, and technology. Public viewing open to parents and invited guests.",
+    category: "Academic",
+  },
+  {
+    id: 3,
+    month: "JUL",
+    day: "05",
+    title: "Inter-House Sports Day",
+    time: "8:00 AM – 5:00 PM",
+    location: "School Sports Field",
+    description:
+      "Annual athletics competition across four houses — Blue, Green, Red, and Yellow. Events include track, field, and team sports with prizes for top performers.",
+    category: "Sports",
+  },
+  {
+    id: 4,
+    month: "JUL",
+    day: "19",
+    title: "Cultural Day Festival",
+    time: "11:00 AM – 4:00 PM",
+    location: "School Auditorium",
+    description:
+      "A celebration of Nigeria's rich cultural heritage through music, dance, traditional attire, and food. All students participate in cultural presentations.",
+    category: "Culture",
+  },
+  {
+    id: 5,
+    month: "AUG",
+    day: "09",
+    title: "End-of-Term Prize Giving",
+    time: "10:00 AM – 1:00 PM",
+    location: "Main Auditorium",
+    description:
+      "Recognising outstanding academic and extracurricular achievements. Top students receive certificates, trophies, and scholarship announcements.",
+    category: "Academic",
   },
 ];
 
-const NewsEvents = () => {
+const CATEGORY_COLORS = {
+  Academic: "bg-blue-100 text-blue-700",
+  Sports: "bg-green-100 text-green-700",
+  Culture: "bg-purple-100 text-purple-700",
+};
+
+export default function NewsEvents() {
+  const [query, setQuery] = useState("");
+
+  const filtered = EVENTS.filter(
+    (e) =>
+      e.title.toLowerCase().includes(query.toLowerCase()) ||
+      e.description.toLowerCase().includes(query.toLowerCase()),
+  );
+
   return (
-    <div>
+    <div className="min-h-screen bg-gray-50">
+      <Navbar />
+
       <HeroSection
-        image="/news.png"
         title="News & Events"
-        text="Welcome to the WiSchool News & Events page! Stay up-to-date with the latest happenings, announcements, and exciting events from our school community. Whether it's academic achievements, cultural celebrations, or extracurricular activities, you'll find all the news and updates right here."
+        text="Stay up-to-date with the latest happenings, announcements, and exciting events from our school community."
+        image="https://picsum.photos/seed/news-hero/1600/600"
       />
 
-      <header
-        className="bg-cover bg-center h-100 md:h-125 sm:h-120 text-white relative"
-        style={{
-          backgroundImage:
-            'url(https://res.cloudinary.com/dtz4rslmb/image/upload/v1738800216/hd_image_1_nvzlqa.png)',
-        }}
-      >
-        <div className="absolute inset-0 bg-black opacity-10"></div>
-        <div>
-          <div className="absolute top-[80px] sm:top-[120px] md:top-[157px] left-[32px] sm:left-[42px] md:left-[65.07px]">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold font-[poppins]">
-              News & Events
-            </h1>
-            <p className="mt-2 text-[18px] sm:text-[19px] md:text-[24px] font-[poppins]">
-              Welcome to the WiSchool News & Events page! Stay up-to-date with
-              the latest happenings, announcements, and exciting events from our
-              school community. Whether it's academic achievements, cultural
-              celebrations, or extracurricular activities, you'll find all the
-              news and updates right here.
-            </p>
-          </div>
+      <div className="max-w-5xl mx-auto px-5 lg:px-10 py-12">
+        {/* Search */}
+        <div className="relative max-w-md mb-10">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search events…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-400"
+          />
         </div>
-      </header>
 
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="p-6 rounded-lg">
-          <div className="mt-6">
-            <div className="ml-2 max-w-[1000px] flex items-center">
+        <div className="flex items-center gap-3 mb-6">
+          <CalendarDays className="w-5 h-5 text-green-600" />
+          <h2 className="text-xl font-bold text-gray-900">Upcoming Events</h2>
+          <span className="text-sm text-gray-400">({filtered.length} events)</span>
+        </div>
+
+        {filtered.length === 0 ? (
+          <div className="text-center py-16">
+            <CalendarDays className="w-12 h-12 text-gray-200 mx-auto mb-3" />
+            <p className="text-gray-500 font-medium">No events match your search</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {filtered.map((event) => (
               <div
-                className="flex-1 flex items-center py-4 h-10.5"
-                style={{
-                  background: 'rgb(240, 240, 240)',
-                  border: '1px solid rgb(231, 227, 227)',
-                  borderRadius: '5px 0 0 5px',
-                }}
+                key={event.id}
+                className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow overflow-hidden"
               >
-                <button className="h-7 pl-2.5 pr-3.5">
-                  <img
-                    src="https://res.cloudinary.com/dtz4rslmb/image/upload/v1738831296/loupe_1_ijxbmh.png"
-                    alt="search"
-                  />
-                </button>
-                <input
-                  type="text"
-                  placeholder="Search for events"
-                  className="text-[16px] focus:outline-none focus:ring-0 focus:border-transparent"
-                />
-              </div>
-              <button
-                className="px-2 py-2.5 bg-[#09B451] text-white hover:bg-green-600 ml-[-2px] text-[15px] font-[poppins]"
-                style={{ borderRadius: '0 5px 5px 0' }}
-              >
-                Check Status
-              </button>
-            </div>
-
-            <div className="flex pt-6 mb-2 items-end">
-              <h2 className="text-3xl font-bold mb-4">Upcoming Events</h2>
-              <p className="mb-4 ml-7 font-light text-gray-400 text-3xl">
-                Stay informed
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              {events.map((event, index) => (
-                <div
-                  key={index}
-                  className="flex items-start border-gray-200 rounded-lg shadow-sm pt-7 pb-7"
-                >
-                  <div className="pr-[10px] pl-[17px] mr-4 font-[poppins]">
-                    <p className="text-[13px] pl-1.5 mt-12 md:mt-4 sm:mt-8">
-                      {event.month}
-                    </p>
-                    <span className="text-4xl font-semibold pl-2">
-                      {event.date}
-                    </span>
+                <div className="flex flex-col sm:flex-row">
+                  {/* Date block */}
+                  <div className="sm:w-28 bg-green-600 flex flex-row sm:flex-col items-center justify-center gap-3 sm:gap-0 px-6 py-4 sm:py-6 flex-shrink-0">
+                    <p className="text-green-200 text-xs font-bold uppercase tracking-widest sm:mb-1">{event.month}</p>
+                    <p className="text-white text-3xl sm:text-4xl font-black leading-none">{event.day}</p>
                   </div>
-                  <div className="flex-1">
-                    <div className="border-l border-black pl-[11px] pt-[2px] pb-[3px]">
-                      <h3 className="text-lg font-bold">{event.title}</h3>
-                      <p
-                        className="mt-1 text-black-500 text-sm"
-                        style={{ maxWidth: '670px' }}
-                      >
-                        {event.description}
-                      </p>
-                      <p
-                        className="text-sm font-[poppins]"
-                        dangerouslySetInnerHTML={{ __html: event.time }}
-                      ></p>
+
+                  {/* Content */}
+                  <div className="p-5 flex-1">
+                    <div className="flex flex-wrap items-center gap-2 mb-2">
+                      <h3 className="font-bold text-gray-900">{event.title}</h3>
+                      <span className={`px-2 py-0.5 text-[11px] font-semibold rounded-full ${CATEGORY_COLORS[event.category] || "bg-gray-100 text-gray-600"}`}>
+                        {event.category}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-500 leading-relaxed mb-3">{event.description}</p>
+                    <div className="flex flex-wrap gap-4 text-xs text-gray-400">
+                      <span className="flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5 text-green-500" /> {event.time}
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-green-500" /> {event.location}
+                      </span>
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
-        </div>
+        )}
       </div>
+
+      <Footer />
     </div>
   );
-};
-
-export default NewsEvents;
+}

@@ -1,10 +1,22 @@
 import PropTypes from "prop-types";
-import { Search, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Plus, UserPlus } from "lucide-react";
 import Layout from "../../components/Layout/Layout";
 import AdminTable from "./AdminTable";
 import { smsApi } from "../../services/smsApi";
+import {
+  PageHeader,
+  SearchBar,
+  ModalShell,
+  Badge,
+  Btn,
+  FormField,
+  Input,
+  Select,
+  Spinner,
+  EmptyState,
+} from "../../components/ui/index.jsx";
 
 const emptyEditState = {
   id: "",
@@ -14,6 +26,20 @@ const emptyEditState = {
   password: "",
   role: "",
   status: "Active",
+};
+
+function DetailRow({ label, value }) {
+  return (
+    <div className="rounded-xl border border-gray-100 bg-gray-50 px-4 py-3">
+      <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold mb-0.5">{label}</p>
+      <p className="text-sm text-gray-800 font-medium break-words">{value || "—"}</p>
+    </div>
+  );
+}
+
+DetailRow.propTypes = {
+  label: PropTypes.string.isRequired,
+  value: PropTypes.string,
 };
 
 export default function AdminUser() {
@@ -31,7 +57,6 @@ export default function AdminUser() {
   async function loadAdmins() {
     setIsLoading(true);
     setErrorMessage("");
-
     try {
       const response = await smsApi.listAdminUsers();
       setAdmins(Array.isArray(response) ? response : []);
@@ -42,80 +67,58 @@ export default function AdminUser() {
     }
   }
 
-  useEffect(() => {
-    loadAdmins();
-  }, []);
+  useEffect(() => { loadAdmins(); }, []);
 
   const filteredAdmins = useMemo(() => {
     const text = searchTerm.trim().toLowerCase();
-
-    if (!text) {
-      return admins;
-    }
-
-    return admins.filter((entry) => {
-      const username = String(entry.username || "").toLowerCase();
-      const fullName = String(entry.fullName || "").toLowerCase();
-      const email = String(entry.email || "").toLowerCase();
-      const role = String(entry.role || "").toLowerCase();
-
-      return (
-        username.includes(text) || fullName.includes(text) || email.includes(text) || role.includes(text)
-      );
-    });
+    if (!text) return admins;
+    return admins.filter((e) =>
+      [e.username, e.fullName, e.email, e.role].some((v) =>
+        String(v || "").toLowerCase().includes(text),
+      ),
+    );
   }, [admins, searchTerm]);
 
-  async function handleView(adminUser) {
-    setErrorMessage("");
-
+  async function handleView(user) {
     try {
-      const fresh = await smsApi.getAdminUser(adminUser.id);
-      setViewAdmin(fresh);
+      const fresh = await smsApi.getAdminUser(user.id);
+      setViewAdmin(fresh || user);
     } catch {
-      setViewAdmin(adminUser);
+      setViewAdmin(user);
     }
   }
 
-  function handleEdit(adminUser) {
+  function handleEdit(user) {
     setEditAdmin({
-      id: adminUser.id,
-      username: adminUser.username || "",
-      fullName: adminUser.fullName || "",
-      email: adminUser.email || "",
+      id: user.id,
+      username: user.username || "",
+      fullName: user.fullName || "",
+      email: user.email || "",
       password: "",
-      role: adminUser.role || "",
-      status: adminUser.status || "Active",
+      role: user.role || "",
+      status: user.status || "Active",
     });
     setIsEditOpen(true);
     setSuccessMessage("");
     setErrorMessage("");
   }
 
-  function handleEditChange(event) {
-    const { name, value } = event.target;
-
-    setEditAdmin((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+  function handleEditChange(e) {
+    const { name, value } = e.target;
+    setEditAdmin((prev) => ({ ...prev, [name]: value }));
   }
 
-  async function handleEditSubmit(event) {
-    event.preventDefault();
-
+  async function handleEditSubmit(e) {
+    e.preventDefault();
     if (!editAdmin.username || !editAdmin.fullName || !editAdmin.email || !editAdmin.role || !editAdmin.status) {
-      setErrorMessage("Fill all admin user fields before saving.");
+      setErrorMessage("Please fill all fields before saving.");
       return;
     }
-
     setIsSaving(true);
     setErrorMessage("");
-    setSuccessMessage("");
-
     try {
       const saved = await smsApi.updateAdminUser(editAdmin.id, editAdmin);
-
-      setAdmins((prev) => prev.map((entry) => (entry.id === saved.id ? saved : entry)));
+      setAdmins((prev) => prev.map((u) => (u.id === (saved?.id ?? editAdmin.id) ? (saved || editAdmin) : u)));
       setIsEditOpen(false);
       setEditAdmin(emptyEditState);
       setSuccessMessage("Admin user updated successfully.");
@@ -126,213 +129,135 @@ export default function AdminUser() {
     }
   }
 
+  // Summary counts
+  const activeCount = admins.filter((u) => u.status === "Active").length;
+  const inactiveCount = admins.filter((u) => u.status === "Inactive").length;
+
   return (
     <Layout activeTab="Admin Users">
-      <div className="min-h-screen relative">
-        <div className="p-3 bg-white border border-gray-100">
-          <div className="flex flex-col gap-4">
-            <h1 className="font-bold text-xl">ADMIN USER</h1>
-          </div>
+      <PageHeader
+        title="Admin Users"
+        subtitle="Manage system administrators and their access permissions"
+        breadcrumbs={[{ label: "Dashboard", onClick: () => navigate("/dashboard") }, { label: "Admin Users" }]}
+        action={
+          <Btn onClick={() => navigate("/admin-users/new")} className="gap-1.5">
+            <Plus className="w-4 h-4" /> New User
+          </Btn>
+        }
+      />
 
-          <div className="border-b border-gray-400 my-4" />
-
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mt-1">
-            <div className="relative w-full max-w-xs">
-              <input
-                type="text"
-                placeholder="Search"
-                value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
-                className="w-full pl-5 pr-10 py-1 rounded border border-gray-300 focus:outline-none"
-              />
-              <Search className="absolute top-1/2 right-3 transform -translate-y-1/2 text-gray-500 w-5 h-5 cursor-pointer" />
-            </div>
-
-            <div>
-              <button
-                className="px-8 py-2 bg-green-600 rounded hover:bg-green-500 w-full text-gray-800 cursor-pointer"
-                onClick={() => navigate("/admin-users/new")}
-              >
-                + New User
-              </button>
-            </div>
-          </div>
-
-          {errorMessage && <p className="text-sm text-red-600 mt-4">{errorMessage}</p>}
-          {successMessage && <p className="text-sm text-green-600 mt-4">{successMessage}</p>}
-          {isLoading ? (
-            <div className="py-10 text-sm text-gray-500">Loading admin users...</div>
-          ) : (
-            <AdminTable admin={filteredAdmins} onView={handleView} onEdit={handleEdit} />
-          )}
+      {/* Summary pills */}
+      <div className="flex gap-3 mb-5">
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-xl border border-gray-100 shadow-sm text-sm">
+          <span className="w-2 h-2 rounded-full bg-blue-500" />
+          <span className="text-gray-500">Total:</span>
+          <span className="font-bold text-gray-800">{admins.length}</span>
         </div>
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-xl border border-gray-100 shadow-sm text-sm">
+          <span className="w-2 h-2 rounded-full bg-green-500" />
+          <span className="text-gray-500">Active:</span>
+          <span className="font-bold text-gray-800">{activeCount}</span>
+        </div>
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-xl border border-gray-100 shadow-sm text-sm">
+          <span className="w-2 h-2 rounded-full bg-red-400" />
+          <span className="text-gray-500">Inactive:</span>
+          <span className="font-bold text-gray-800">{inactiveCount}</span>
+        </div>
+      </div>
 
-        {viewAdmin && (
-          <ModalShell title="Admin User Details" onClose={() => setViewAdmin(null)}>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-700">
-              <Detail label="Username" value={viewAdmin.username} />
-              <Detail label="Full Name" value={viewAdmin.fullName} />
-              <Detail label="Email" value={viewAdmin.email} />
-              <Detail label="Role" value={viewAdmin.role} />
-              <Detail label="Status" value={viewAdmin.status} />
-              <Detail
-                label="Modules"
-                value={Object.entries(viewAdmin.permissions || {})
-                  .filter(([, allowed]) => Boolean(allowed))
-                  .map(([moduleName]) => moduleName)
-                  .join(", ") || "No module access"}
-              />
-            </div>
-          </ModalShell>
-        )}
+      {/* Search bar */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-4">
+        <div className="flex-1 max-w-xs">
+          <SearchBar
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search by name, email, role…"
+          />
+        </div>
+      </div>
 
-        {isEditOpen && (
-          <ModalShell title="Edit Admin User" onClose={() => setIsEditOpen(false)}>
-            <form onSubmit={handleEditSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Field
-                  label="User Name"
-                  name="username"
-                  value={editAdmin.username}
-                  onChange={handleEditChange}
-                  placeholder="User name"
-                />
-                <Field
-                  label="Full Name"
-                  name="fullName"
-                  value={editAdmin.fullName}
-                  onChange={handleEditChange}
-                  placeholder="Full name"
-                />
-                <Field
-                  label="Email"
-                  name="email"
-                  value={editAdmin.email}
-                  onChange={handleEditChange}
-                  placeholder="Email"
-                  type="email"
-                />
-                <Field
-                  label="Reset Password"
-                  name="password"
-                  value={editAdmin.password}
-                  onChange={handleEditChange}
-                  placeholder="Leave blank to keep current password"
-                  type="password"
-                />
-                <Field
-                  label="Role"
-                  name="role"
-                  value={editAdmin.role}
-                  onChange={handleEditChange}
-                  placeholder="Role"
-                />
-              </div>
+      {errorMessage && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">{errorMessage}</div>
+      )}
+      {successMessage && (
+        <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-xl text-sm text-green-700">{successMessage}</div>
+      )}
 
-              <div className="flex flex-col gap-1">
-                <label htmlFor="status" className="text-sm font-medium text-gray-700">
-                  Status
-                </label>
-                <select
-                  id="status"
-                  name="status"
-                  value={editAdmin.status}
-                  onChange={handleEditChange}
-                  className="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none"
-                >
+      {isLoading ? (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
+          <Spinner label="Loading admin users…" />
+        </div>
+      ) : (
+        <AdminTable admin={filteredAdmins} onView={handleView} onEdit={handleEdit} />
+      )}
+
+      {/* View Modal */}
+      {viewAdmin && (
+        <ModalShell title="Admin User Details" onClose={() => setViewAdmin(null)}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <DetailRow label="Username" value={viewAdmin.username} />
+            <DetailRow label="Full Name" value={viewAdmin.fullName} />
+            <DetailRow label="Email" value={viewAdmin.email} />
+            <DetailRow label="Role" value={viewAdmin.role} />
+            <DetailRow label="Status" value={viewAdmin.status} />
+            <DetailRow
+              label="Module Access"
+              value={
+                Object.entries(viewAdmin.permissions || {})
+                  .filter(([, v]) => Boolean(v))
+                  .map(([k]) => k)
+                  .join(", ") || "No module access"
+              }
+            />
+          </div>
+          <div className="mt-4 flex justify-end gap-2">
+            <Btn variant="secondary" onClick={() => setViewAdmin(null)}>Close</Btn>
+            <Btn onClick={() => { setViewAdmin(null); handleEdit(viewAdmin); }}>Edit User</Btn>
+          </div>
+        </ModalShell>
+      )}
+
+      {/* Edit Modal */}
+      {isEditOpen && (
+        <ModalShell title="Edit Admin User" onClose={() => setIsEditOpen(false)}>
+          <form onSubmit={handleEditSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormField label="Username" required>
+                <Input name="username" value={editAdmin.username} onChange={handleEditChange} placeholder="Username" />
+              </FormField>
+              <FormField label="Full Name" required>
+                <Input name="fullName" value={editAdmin.fullName} onChange={handleEditChange} placeholder="Full name" />
+              </FormField>
+              <FormField label="Email" required>
+                <Input type="email" name="email" value={editAdmin.email} onChange={handleEditChange} placeholder="Email" />
+              </FormField>
+              <FormField label="Reset Password">
+                <Input type="password" name="password" value={editAdmin.password} onChange={handleEditChange} placeholder="Leave blank to keep current" />
+              </FormField>
+              <FormField label="Role" required>
+                <Input name="role" value={editAdmin.role} onChange={handleEditChange} placeholder="Role" />
+              </FormField>
+              <FormField label="Status" required>
+                <Select name="status" value={editAdmin.status} onChange={handleEditChange}>
                   <option value="Active">Active</option>
                   <option value="Inactive">Inactive</option>
-                </select>
-              </div>
+                </Select>
+              </FormField>
+            </div>
 
-              <div className="flex justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setIsEditOpen(false)}
-                  className="px-4 py-2 border border-gray-300 rounded text-sm cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSaving}
-                  className="px-4 py-2 bg-green-600 text-white rounded text-sm hover:bg-green-700 disabled:opacity-60 cursor-pointer"
-                >
-                  {isSaving ? "Saving..." : "Save Changes"}
-                </button>
-              </div>
-            </form>
-          </ModalShell>
-        )}
-      </div>
+            {errorMessage && (
+              <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{errorMessage}</p>
+            )}
+
+            <div className="flex justify-end gap-2 pt-2">
+              <Btn variant="secondary" type="button" onClick={() => setIsEditOpen(false)}>Cancel</Btn>
+              <Btn type="submit" disabled={isSaving}>
+                {isSaving ? "Saving…" : "Save Changes"}
+              </Btn>
+            </div>
+          </form>
+        </ModalShell>
+      )}
     </Layout>
   );
 }
-
-function ModalShell({ title, onClose, children }) {
-  return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-[70]">
-      <div className="bg-white rounded-lg shadow-xl border border-gray-200 w-full max-w-2xl">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
-          <button type="button" onClick={onClose} className="text-gray-500 hover:text-black cursor-pointer">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-        <div className="p-5">{children}</div>
-      </div>
-    </div>
-  );
-}
-
-ModalShell.propTypes = {
-  title: PropTypes.string.isRequired,
-  onClose: PropTypes.func.isRequired,
-  children: PropTypes.node.isRequired,
-};
-
-function Field({ label, name, value, onChange, placeholder, type = "text" }) {
-  return (
-    <div className="flex flex-col gap-1">
-      <label htmlFor={name} className="text-sm font-medium text-gray-700">
-        {label}
-      </label>
-      <input
-        id={name}
-        type={type}
-        name={name}
-        value={value}
-        onChange={onChange}
-        placeholder={placeholder}
-        className="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none"
-      />
-    </div>
-  );
-}
-
-Field.propTypes = {
-  label: PropTypes.string.isRequired,
-  name: PropTypes.string.isRequired,
-  value: PropTypes.string.isRequired,
-  onChange: PropTypes.func.isRequired,
-  placeholder: PropTypes.string.isRequired,
-  type: PropTypes.string,
-};
-
-function Detail({ label, value }) {
-  return (
-    <div className="rounded-md border border-gray-200 px-4 py-3 bg-gray-50">
-      <p className="text-xs uppercase tracking-wide text-gray-500">{label}</p>
-      <p className="mt-1 text-sm text-gray-900 break-words">{value || "-"}</p>
-    </div>
-  );
-}
-
-Detail.propTypes = {
-  label: PropTypes.string.isRequired,
-  value: PropTypes.string,
-};
-
-Detail.defaultProps = {
-  value: "",
-};

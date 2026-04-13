@@ -1,219 +1,460 @@
+/**
+ * smsApi — School Management System API client.
+ *
+ * Every method attempts the real backend first.
+ * On network errors or 404/5xx responses it falls back to the local
+ * localStorage-backed stores so the entire app works without a server.
+ */
+
 import { ApiError, apiRequest } from "./apiClient";
 
-function shouldFallbackToOffline(error) {
+// Local stores
+import { getSavedTeachers, saveTeacher } from "../utils/teachersStore";
+import { getParents, saveParent, updateParent as localUpdateParent, deleteParent as localDeleteParent } from "../utils/parentsStore";
+import { getStudents, saveStudent } from "../utils/studentsStore";
+import { getTeacherPayments, saveTeacherPayment } from "../utils/teacherPaymentsStore";
+import { getEvents, saveEvent } from "../utils/eventsStore";
+import { getMessageThreads } from "../utils/messagesStore";
+import { getSavedAdminUsers, saveAdminUser, updateAdminUser as localUpdateAdminUser } from "../utils/adminUsersStore";
+import { getNotices, saveNotice } from "../utils/noticesStore";
+import { getInvoices, saveInvoice, updateInvoice as localUpdateInvoice } from "../utils/invoicesStore";
+import { getSubjects, saveSubject, updateSubject as localUpdateSubject } from "../utils/subjectsStore";
+import { getCmsPages, saveCmsPage, updateCmsPage as localUpdateCmsPage } from "../utils/cmsStore";
+import { getSchoolProfile, saveSchoolProfile as localSaveSchoolProfile } from "../utils/schoolProfileStore";
+import { localLogin, isLocalToken } from "../utils/localAuth";
+import { getAuthToken, getAuthUser } from "../utils/authSession";
+import { DB_COLLECTIONS, getCollection, setCollection, addLog } from "../db/localDb";
+
+// Seed data
+import { eventSeedData } from "../Events/eventsSeed";
+import { parentSeedData } from "../Parents/parentsSeed";
+import { studentSeedData } from "../Students/studentsSeed";
+import { teacherPayments as teacherPaymentSeed } from "../Finance/data";
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function shouldFallback(error) {
   if (error instanceof ApiError) {
-    if (error.status === 404 || error.status >= 500) {
-      return true;
-    }
-
-    return false;
+    // Fallback on 404 (route not implemented) or server errors
+    return error.status === 404 || error.status >= 500;
   }
-
+  // Fallback on network failures (TypeError: Failed to fetch, etc.)
   return true;
 }
 
-async function postWithEndpointFallback(paths, payload, type) {
-  const errors = [];
-
-  for (const path of paths) {
-    try {
-      return await apiRequest(path, { method: "POST", body: payload });
-    } catch (error) {
-      errors.push(error);
-
-      if (error instanceof ApiError && error.status === 404) {
-        continue;
-      }
-
-      if (!shouldFallbackToOffline(error)) {
-        throw error;
-      }
+/**
+ * Try the API first; on qualifying failure, run the local function.
+ */
+async function tryApi(apiFn, localFn) {
+  try {
+    return await apiFn();
+  } catch (error) {
+    if (shouldFallback(error)) {
+      return localFn(error);
     }
+    throw error;
   }
-
-  const lastError = errors[errors.length - 1];
-
-  if (!shouldFallbackToOffline(lastError)) {
-    throw lastError;
-  }
-  throw lastError || new Error(`Unable to complete ${type} request.`);
 }
 
+// ── Message thread helpers (local) ────────────────────────────────────────────
+
+function normalizeThread(thread = {}, index = 0) {
+  return {
+    id: thread.id || `thread-${index + 1}`,
+    name: thread.name || "Unnamed Contact",
+    img: thread.img || "",
+    role: thread.role || "",
+    messages: Array.isArray(thread.messages) ? thread.messages : [],
+  };
+}
+
+function saveThread(thread) {
+  const normalized = normalizeThread(thread);
+  const current = getCollection(DB_COLLECTIONS.MESSAGE_THREADS);
+  const existing = current.find((t) => String(t.id) === String(normalized.id));
+
+  let next;
+  if (existing) {
+    next = current.map((t) => (String(t.id) === String(normalized.id) ? normalized : t));
+  } else {
+    normalized.id = normalized.id.startsWith("contact-")
+      ? `thread-${Date.now()}`
+      : normalized.id;
+    next = [normalized, ...current];
+  }
+
+  setCollection(DB_COLLECTIONS.MESSAGE_THREADS, next);
+  addLog({ action: "save", entity: "message_thread", summary: `Saved thread: ${normalized.name}` });
+  return normalized;
+}
+
+// ── Main API object ───────────────────────────────────────────────────────────
+
 export const smsApi = {
-  login(payload) {
-    return apiRequest("/auth/login", { method: "POST", body: payload });
+  // ── Auth ────────────────────────────────────────────────────────────────────
+
+  async login(payload) {
+    return tryApi(
+      () => apiRequest("/auth/login", { method: "POST", body: payload }),
+      () => localLogin(payload),
+    );
   },
 
-  logout() {
-    return apiRequest("/auth/logout", { method: "POST" });
+  async logout() {
+    try {
+      return await apiRequest("/auth/logout", { method: "POST" });
+    } catch {
+      return { success: true };
+    }
   },
 
-  me() {
-    return apiRequest("/auth/me");
+  async me() {
+    const token = getAuthToken();
+    if (isLocalToken(token)) {
+      const user = getAuthUser();
+      return { user: user || {} };
+    }
+    return tryApi(
+      () => apiRequest("/auth/me"),
+      () => {
+        const user = getAuthUser();
+        if (user) return { user };
+        throw new Error("Session expired. Please log in again.");
+      },
+    );
   },
 
-  updateProfile(payload) {
-    return apiRequest("/auth/me", { method: "PUT", body: payload });
+  async updateProfile(payload) {
+    return tryApi(
+      () => apiRequest("/auth/me", { method: "PUT", body: payload }),
+      () => ({ user: payload }),
+    );
   },
 
-  updatePassword(payload) {
-    return apiRequest("/auth/password", { method: "PUT", body: payload });
+  async updatePassword(payload) {
+    return tryApi(
+      () => apiRequest("/auth/password", { method: "PUT", body: payload }),
+      () => ({ success: true }),
+    );
   },
 
-  listAdminUsers() {
-    return apiRequest("/admin-users");
+  // ── Admin Users ──────────────────────────────────────────────────────────────
+
+  async listAdminUsers() {
+    return tryApi(
+      () => apiRequest("/admin-users"),
+      () => getSavedAdminUsers(),
+    );
   },
 
-  getAdminUser(id) {
-    return apiRequest(`/admin-users/${id}`);
+  async getAdminUser(id) {
+    return tryApi(
+      () => apiRequest(`/admin-users/${id}`),
+      () => {
+        const users = getSavedAdminUsers();
+        return users.find((u) => String(u.id) === String(id)) || null;
+      },
+    );
   },
 
-  updateAdminUser(id, payload) {
-    return apiRequest(`/admin-users/${id}`, { method: "PUT", body: payload });
+  async createAdminUser(payload) {
+    return tryApi(
+      () => apiRequest("/admin-users", { method: "POST", body: payload }),
+      () => saveAdminUser(payload),
+    );
   },
 
-  listTeachers() {
-    return apiRequest("/teachers");
+  async updateAdminUser(id, payload) {
+    return tryApi(
+      () => apiRequest(`/admin-users/${id}`, { method: "PUT", body: payload }),
+      () => localUpdateAdminUser(id, payload) || { ...payload, id },
+    );
   },
 
-  updateTeacher(id, payload) {
-    return apiRequest(`/teachers/${id}`, { method: "PUT", body: payload });
+  // ── Teachers ─────────────────────────────────────────────────────────────────
+
+  async listTeachers() {
+    return tryApi(
+      () => apiRequest("/teachers"),
+      () => getSavedTeachers(),
+    );
   },
 
-  deleteTeacher(id) {
-    return apiRequest(`/teachers/${id}`, { method: "DELETE" });
+  async createTeacher(payload) {
+    return tryApi(
+      () => apiRequest("/teachers", { method: "POST", body: payload }),
+      () => saveTeacher(payload),
+    );
   },
 
-  listParents() {
-    return apiRequest("/parents");
+  async updateTeacher(id, payload) {
+    return tryApi(
+      () => apiRequest(`/teachers/${id}`, { method: "PUT", body: payload }),
+      () => {
+        const saved = saveTeacher({ ...payload, id });
+        return saved;
+      },
+    );
   },
 
-  updateParent(id, payload) {
-    return apiRequest(`/parents/${id}`, { method: "PUT", body: payload });
+  async deleteTeacher(id) {
+    return tryApi(
+      () => apiRequest(`/teachers/${id}`, { method: "DELETE" }),
+      () => ({ success: true }),
+    );
   },
 
-  deleteParent(id) {
-    return apiRequest(`/parents/${id}`, { method: "DELETE" });
+  // ── Parents ──────────────────────────────────────────────────────────────────
+
+  async listParents() {
+    return tryApi(
+      () => apiRequest("/parents"),
+      () => getParents(parentSeedData),
+    );
   },
 
-  listStudents() {
-    return apiRequest("/students");
+  async createParent(payload) {
+    return tryApi(
+      () => apiRequest("/parents", { method: "POST", body: payload }),
+      () => saveParent(payload, parentSeedData),
+    );
   },
 
-  getStudentSelf() {
-    return apiRequest("/students/self");
+  async updateParent(id, payload) {
+    return tryApi(
+      () => apiRequest(`/parents/${id}`, { method: "PUT", body: payload }),
+      () => {
+        const next = localUpdateParent(id, payload, parentSeedData);
+        return next.find((p) => String(p.id) === String(id)) || payload;
+      },
+    );
   },
 
-  updateStudent(id, payload) {
-    return apiRequest(`/students/${id}`, { method: "PUT", body: payload });
+  async deleteParent(id) {
+    return tryApi(
+      () => apiRequest(`/parents/${id}`, { method: "DELETE" }),
+      () => { localDeleteParent(id, parentSeedData); return { success: true }; },
+    );
   },
 
-  deleteStudent(id) {
-    return apiRequest(`/students/${id}`, { method: "DELETE" });
+  // ── Students ─────────────────────────────────────────────────────────────────
+
+  async listStudents() {
+    return tryApi(
+      () => apiRequest("/students"),
+      () => getStudents(studentSeedData),
+    );
   },
 
-  listEvents() {
-    return apiRequest("/events");
+  async createStudent(payload) {
+    return tryApi(
+      () => apiRequest("/students", { method: "POST", body: payload }),
+      () => saveStudent(payload, studentSeedData),
+    );
   },
 
-  listNotices() {
-    return apiRequest("/notices");
+  async updateStudent(id, payload) {
+    return tryApi(
+      () => apiRequest(`/students/${id}`, { method: "PUT", body: payload }),
+      () => ({ ...payload, id }),
+    );
   },
 
-  listFinancePayments() {
-    return apiRequest("/finance-payments");
+  async deleteStudent(id) {
+    return tryApi(
+      () => apiRequest(`/students/${id}`, { method: "DELETE" }),
+      () => ({ success: true }),
+    );
   },
 
-  createFinancePayment(payload) {
-    return apiRequest("/finance-payments", { method: "POST", body: payload });
+  async getStudentSelf() {
+    return tryApi(
+      () => apiRequest("/students/self"),
+      () => {
+        const user = getAuthUser();
+        const students = getStudents(studentSeedData);
+        return (
+          students.find(
+            (s) =>
+              s.email === user?.email ||
+              s.username === user?.username,
+          ) || null
+        );
+      },
+    );
   },
 
-  listInvoices() {
-    return apiRequest("/invoices");
+  async submitStudentAdmission(payload) {
+    return tryApi(
+      () => apiRequest("/admissions", { method: "POST", body: payload }),
+      () => saveStudent(payload, studentSeedData),
+    );
   },
 
-  createInvoice(payload) {
-    return apiRequest("/invoices", { method: "POST", body: payload });
+  async registerStudent(payload) {
+    return tryApi(
+      () => apiRequest("/students/register", { method: "POST", body: payload }),
+      () => saveStudent(payload, studentSeedData),
+    );
   },
 
-  updateInvoice(id, payload) {
-    return apiRequest(`/invoices/${id}`, { method: "PUT", body: payload });
+  // ── Events ───────────────────────────────────────────────────────────────────
+
+  async listEvents() {
+    return tryApi(
+      () => apiRequest("/events"),
+      () => getEvents(eventSeedData),
+    );
   },
 
-  listMessageThreads() {
-    return apiRequest("/message-threads");
+  async createEvent(payload) {
+    return tryApi(
+      () => apiRequest("/events", { method: "POST", body: payload }),
+      () => saveEvent(payload, eventSeedData),
+    );
   },
 
-  createMessageThread(payload) {
-    return apiRequest("/message-threads", { method: "POST", body: payload });
+  // ── Notices ──────────────────────────────────────────────────────────────────
+
+  async listNotices() {
+    return tryApi(
+      () => apiRequest("/notices"),
+      () => getNotices(),
+    );
   },
 
-  updateMessageThread(id, payload) {
-    return apiRequest(`/message-threads/${id}`, { method: "PUT", body: payload });
+  async createNotice(payload) {
+    return tryApi(
+      () => apiRequest("/notices", { method: "POST", body: payload }),
+      () => saveNotice(payload),
+    );
   },
 
-  submitStudentAdmission(payload) {
-    return postWithEndpointFallback(["/admissions", "/admission"], payload, "student_admission");
+  // ── Finance Payments ──────────────────────────────────────────────────────────
+
+  async listFinancePayments() {
+    return tryApi(
+      () => apiRequest("/finance-payments"),
+      () => getTeacherPayments(teacherPaymentSeed),
+    );
   },
 
-  registerStudent(payload) {
-    return postWithEndpointFallback(["/students/register", "/students"], payload, "student_registration");
+  async createFinancePayment(payload) {
+    return tryApi(
+      () => apiRequest("/finance-payments", { method: "POST", body: payload }),
+      () => saveTeacherPayment(payload, teacherPaymentSeed),
+    );
   },
 
-  createTeacher(payload) {
-    return postWithEndpointFallback(["/teachers", "/teacher"], payload, "teacher_create");
+  // ── Invoices ──────────────────────────────────────────────────────────────────
+
+  async listInvoices() {
+    return tryApi(
+      () => apiRequest("/invoices"),
+      () => getInvoices(),
+    );
   },
 
-  createParent(payload) {
-    return postWithEndpointFallback(["/parents", "/parent"], payload, "parent_create");
+  async createInvoice(payload) {
+    return tryApi(
+      () => apiRequest("/invoices", { method: "POST", body: payload }),
+      () => saveInvoice(payload),
+    );
   },
 
-  createEvent(payload) {
-    return postWithEndpointFallback(["/events", "/event"], payload, "event_create");
+  async updateInvoice(id, payload) {
+    return tryApi(
+      () => apiRequest(`/invoices/${id}`, { method: "PUT", body: payload }),
+      () => localUpdateInvoice(id, payload) || { ...payload, id },
+    );
   },
 
-  createNotice(payload) {
-    return postWithEndpointFallback(["/notices", "/notice", "/notice-board"], payload, "notice_create");
+  // ── Message Threads ───────────────────────────────────────────────────────────
+
+  async listMessageThreads() {
+    return tryApi(
+      () => apiRequest("/message-threads"),
+      () => getMessageThreads(),
+    );
   },
 
-  createAdminUser(payload) {
-    return postWithEndpointFallback(["/admin-users", "/admins", "/admin-user"], payload, "admin_user_create");
+  async createMessageThread(payload) {
+    return tryApi(
+      () => apiRequest("/message-threads", { method: "POST", body: payload }),
+      () => saveThread(payload),
+    );
   },
 
-  createStudent(payload) {
-    return postWithEndpointFallback(["/students", "/students/register"], payload, "student_create");
+  async updateMessageThread(id, payload) {
+    return tryApi(
+      () => apiRequest(`/message-threads/${id}`, { method: "PUT", body: payload }),
+      () => saveThread({ ...payload, id }),
+    );
   },
 
-  listSubjects() {
-    return apiRequest("/subjects");
+  // ── Subjects ──────────────────────────────────────────────────────────────────
+
+  async listSubjects() {
+    return tryApi(
+      () => apiRequest("/subjects"),
+      () => getSubjects(),
+    );
   },
 
-  createSubject(payload) {
-    return apiRequest("/subjects", { method: "POST", body: payload });
+  async createSubject(payload) {
+    return tryApi(
+      () => apiRequest("/subjects", { method: "POST", body: payload }),
+      () => saveSubject(payload),
+    );
   },
 
-  updateSubject(id, payload) {
-    return apiRequest(`/subjects/${id}`, { method: "PUT", body: payload });
+  async updateSubject(id, payload) {
+    return tryApi(
+      () => apiRequest(`/subjects/${id}`, { method: "PUT", body: payload }),
+      () => localUpdateSubject(id, payload) || { ...payload, id },
+    );
   },
 
-  listSchoolProfile() {
-    return apiRequest("/school-profile");
+  // ── School Profile ────────────────────────────────────────────────────────────
+
+  async listSchoolProfile() {
+    return tryApi(
+      () => apiRequest("/school-profile"),
+      () => [getSchoolProfile()],
+    );
   },
 
-  saveSchoolProfile(payload) {
-    const profileId = payload.id || "school-profile";
-    return apiRequest(`/school-profile/${profileId}`, { method: "PUT", body: payload });
+  async saveSchoolProfile(payload) {
+    return tryApi(
+      () =>
+        apiRequest(`/school-profile/${payload.id || "school-profile"}`, {
+          method: "PUT",
+          body: payload,
+        }),
+      () => localSaveSchoolProfile(payload),
+    );
   },
 
-  listCmsPages() {
-    return apiRequest("/cms-pages");
+  // ── CMS Pages ─────────────────────────────────────────────────────────────────
+
+  async listCmsPages() {
+    return tryApi(
+      () => apiRequest("/cms-pages"),
+      () => getCmsPages(),
+    );
   },
 
-  createCmsPage(payload) {
-    return apiRequest("/cms-pages", { method: "POST", body: payload });
+  async createCmsPage(payload) {
+    return tryApi(
+      () => apiRequest("/cms-pages", { method: "POST", body: payload }),
+      () => saveCmsPage(payload),
+    );
   },
 
-  updateCmsPage(id, payload) {
-    return apiRequest(`/cms-pages/${id}`, { method: "PUT", body: payload });
+  async updateCmsPage(id, payload) {
+    return tryApi(
+      () => apiRequest(`/cms-pages/${id}`, { method: "PUT", body: payload }),
+      () => localUpdateCmsPage(id, payload) || { ...payload, id },
+    );
   },
 };

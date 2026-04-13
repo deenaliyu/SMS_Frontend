@@ -1,164 +1,195 @@
-import { BookOpenCheck, CalendarDays, LogOut, Mail, Phone, UserCircle2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import { useNavigate } from "react-router-dom";
+import { BookOpenCheck, Calendar, GraduationCap, LogOut, Mail, Phone, UserCircle2 } from "lucide-react";
 import { smsApi } from "../../services/smsApi";
 import { getProfileAvatar } from "../../utils/profileAvatar";
 import { getAuthUser } from "../../utils/authSession";
+
+function InfoRow({ icon: Icon, label, value }) {
+  return (
+    <div className="flex items-start gap-3 py-3 border-b border-gray-100 last:border-0">
+      <div className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0 mt-0.5">
+        <Icon className="w-3.5 h-3.5 text-blue-600" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-[10px] uppercase tracking-wider text-gray-400 font-medium">{label}</p>
+        <p className="text-sm text-gray-800 font-medium break-words mt-0.5">{value || "—"}</p>
+      </div>
+    </div>
+  );
+}
+
+InfoRow.propTypes = {
+  icon: PropTypes.elementType.isRequired,
+  label: PropTypes.string.isRequired,
+  value: PropTypes.string,
+};
+
+function StatCard({ icon: Icon, title, value, desc }) {
+  return (
+    <div className="bg-blue-900/50 rounded-2xl p-5 border border-blue-800/50">
+      <div className="flex items-center gap-3 mb-2">
+        <div className="w-8 h-8 rounded-xl bg-blue-700/60 flex items-center justify-center">
+          <Icon className="w-4 h-4 text-blue-200" />
+        </div>
+        <p className="text-blue-200 text-sm font-medium">{title}</p>
+      </div>
+      <p className="text-2xl font-bold text-white mb-0.5">{value}</p>
+      <p className="text-blue-400 text-xs leading-relaxed">{desc}</p>
+    </div>
+  );
+}
+
+StatCard.propTypes = {
+  icon: PropTypes.elementType.isRequired,
+  title: PropTypes.string.isRequired,
+  value: PropTypes.string.isRequired,
+  desc: PropTypes.string.isRequired,
+};
 
 export default function StudentPortal() {
   const navigate = useNavigate();
   const authUser = getAuthUser();
   const [studentRecord, setStudentRecord] = useState(null);
-  const [errorMessage, setErrorMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
 
-    async function loadStudentRecord() {
+    async function load() {
       try {
-        const response = await smsApi.getStudentSelf();
-
-        if (active) {
-          setStudentRecord(response || null);
-        }
-      } catch (error) {
-        if (active) {
-          setErrorMessage(error.message || "Unable to load your student profile.");
-        }
+        const data = await smsApi.getStudentSelf();
+        if (active) setStudentRecord(data || null);
+      } catch {
+        // Use auth user fallback
+      } finally {
+        if (active) setIsLoading(false);
       }
     }
 
-    loadStudentRecord();
-
-    return () => {
-      active = false;
-    };
+    load();
+    return () => { active = false; };
   }, []);
 
-  const displayName = studentRecord?.name || authUser?.fullName || authUser?.name || authUser?.username || "Student";
-  const profileImage = getProfileAvatar(displayName, "Student");
+  const displayName = studentRecord?.name || authUser?.fullName || authUser?.username || "Student";
+  const avatar = getProfileAvatar(displayName, "Student");
+  const className = studentRecord?.className || studentRecord?.class || "Not assigned";
+  const admissionNo = studentRecord?.admissionNumber || studentRecord?.studentId || "Pending";
+  const email = studentRecord?.email || authUser?.email || "—";
+  const phone = studentRecord?.phone || studentRecord?.mobileNumber || "—";
 
   return (
-    <div className="min-h-screen bg-slate-100">
-      <header className="bg-[#0E4C92] text-white px-6 py-5 shadow-md">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <p className="text-sm uppercase tracking-[0.2em] text-blue-100">Student Portal</p>
-            <h1 className="text-3xl font-bold mt-1">Welcome, {displayName}</h1>
-          </div>
-
-          <button
-            onClick={() => navigate("/logout")}
-            className="inline-flex items-center justify-center gap-2 rounded-md bg-white/10 px-4 py-2 text-sm font-medium hover:bg-white/20"
-          >
-            <LogOut className="w-4 h-4" />
-            Logout
-          </button>
-        </div>
-      </header>
-
-      <main className="max-w-6xl mx-auto px-6 py-8">
-        <section className="grid gap-6 lg:grid-cols-[320px_1fr]">
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 text-center">
-            <img src={profileImage} alt={displayName} className="w-28 h-28 rounded-full mx-auto mb-4 object-cover" />
-            <h2 className="text-2xl font-semibold text-slate-900">{displayName}</h2>
-            <p className="text-sm text-slate-500 mt-1">{authUser?.username || studentRecord?.username || "Student account"}</p>
-
-            <div className="mt-6 space-y-3 text-left">
-              <DetailRow icon={Mail} label="Email" value={studentRecord?.email || authUser?.email || "Not provided"} />
-              <DetailRow icon={Phone} label="Phone" value={studentRecord?.phone || studentRecord?.mobileNumber || "Not provided"} />
-              <DetailRow
-                icon={BookOpenCheck}
-                label="Class"
-                value={studentRecord?.className || studentRecord?.class || "Not assigned"}
-              />
-              <DetailRow
-                icon={UserCircle2}
-                label="Admission No."
-                value={studentRecord?.admissionNumber || studentRecord?.studentId || "Pending"}
-              />
+    <div
+      className="min-h-screen"
+      style={{ background: "linear-gradient(160deg, #0e3a69 0%, #0c2d54 50%, #071d38 100%)" }}
+    >
+      {/* Top bar */}
+      <div className="border-b border-blue-800/50 px-5 py-4">
+        <div className="max-w-5xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center">
+              <GraduationCap className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <p className="text-white font-bold leading-tight text-sm">WiSchool</p>
+              <p className="text-blue-400/60 text-[9px] uppercase tracking-widest">Student Portal</p>
             </div>
           </div>
+          <button
+            type="button"
+            onClick={() => navigate("/logout")}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-800/60 border border-blue-700/50 text-blue-200 rounded-xl hover:bg-blue-700/50 text-sm font-medium cursor-pointer transition-colors"
+          >
+            <LogOut className="w-4 h-4" /> Sign Out
+          </button>
+        </div>
+      </div>
 
-          <div className="space-y-6">
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-              <h3 className="text-xl font-semibold text-slate-900">Your Account</h3>
-              <p className="text-slate-500 mt-2">
-                This portal is reserved for student access. Administrative pages are blocked until an admin account signs in.
-              </p>
+      <div className="max-w-5xl mx-auto px-5 py-8">
+        {isLoading ? (
+          <div className="flex items-center justify-center py-24">
+            <div className="w-10 h-10 border-4 border-blue-700 border-t-blue-300 rounded-full animate-spin" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Profile card */}
+            <div className="bg-blue-900/40 border border-blue-800/40 rounded-3xl p-6 text-center">
+              <img
+                src={avatar}
+                alt={displayName}
+                className="w-24 h-24 rounded-2xl mx-auto mb-4 object-cover ring-4 ring-blue-700/50"
+              />
+              <h2 className="text-xl font-bold text-white mb-0.5">{displayName}</h2>
+              <p className="text-blue-400 text-sm mb-4">{authUser?.username || "Student Account"}</p>
 
-              {errorMessage && <p className="mt-4 text-sm text-red-600">{errorMessage}</p>}
+              <div className="bg-blue-800/40 rounded-xl px-4 py-2 text-center mb-5 inline-block w-full">
+                <span className="text-blue-200 text-xs font-medium">Class: </span>
+                <span className="text-white text-sm font-bold">{className}</span>
+              </div>
 
-              <div className="mt-6 grid md:grid-cols-2 gap-4">
-                <InfoCard
-                  icon={CalendarDays}
-                  title="Session Access"
-                  value="Authenticated"
-                  description="Your portal session is active and protected."
-                />
-                <InfoCard
-                  icon={BookOpenCheck}
-                  title="Saved Profile"
-                  value={studentRecord ? "Connected" : "Basic Account"}
-                  description="Student details load from the backend when a saved profile exists."
-                />
+              <div className="text-left">
+                <InfoRow icon={Mail} label="Email" value={email} />
+                <InfoRow icon={Phone} label="Phone" value={phone} />
+                <InfoRow icon={BookOpenCheck} label="Admission No." value={admissionNo} />
+                <InfoRow icon={UserCircle2} label="Student ID" value={studentRecord?.studentId || "—"} />
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-              <h3 className="text-xl font-semibold text-slate-900">Next Steps</h3>
-              <ul className="mt-4 space-y-3 text-slate-600">
-                <li>Use your student login route only: `/student-login`.</li>
-                <li>If your class or contact details are missing, update the saved student record from the admin side.</li>
-                <li>Use the logout button before switching to an admin account.</li>
-              </ul>
+            {/* Main content */}
+            <div className="lg:col-span-2 space-y-5">
+              {/* Welcome */}
+              <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-3xl p-6 border border-blue-500/50 shadow-lg shadow-blue-900/40">
+                <p className="text-blue-200 text-sm mb-1">Welcome back,</p>
+                <h1 className="text-2xl font-extrabold text-white mb-2">{displayName.split(" ")[0]} 👋</h1>
+                <p className="text-blue-200 text-sm leading-relaxed">
+                  You're logged in to the WiSchool student portal. Academic records, timetables, and fee details are managed by your class administrator.
+                </p>
+              </div>
+
+              {/* Stats */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <StatCard
+                  icon={BookOpenCheck}
+                  title="Class"
+                  value={className}
+                  desc="Your current assigned class for this academic session."
+                />
+                <StatCard
+                  icon={Calendar}
+                  title="Session"
+                  value="2025/2026"
+                  desc="Active academic session. Term 1 is in progress."
+                />
+                <StatCard
+                  icon={GraduationCap}
+                  title="Admission"
+                  value={admissionNo}
+                  desc="Your unique school admission number."
+                />
+              </div>
+
+              {/* Notice */}
+              <div className="bg-blue-900/40 border border-blue-800/40 rounded-2xl p-5">
+                <h3 className="text-white font-bold mb-3">Important Notes</h3>
+                <ul className="space-y-2">
+                  {[
+                    "Use the Student Login route (/student-login) when accessing the portal.",
+                    "For profile updates or missing class details, contact your class administrator.",
+                    "Always sign out after each session, especially on shared devices.",
+                    "For fee payments, visit the Online Payment section on the school website.",
+                  ].map((item) => (
+                    <li key={item} className="flex items-start gap-2.5 text-sm text-blue-300">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500 flex-shrink-0 mt-1.5" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
           </div>
-        </section>
-      </main>
-    </div>
-  );
-}
-
-function DetailRow({ icon: Icon, label, value }) {
-  return (
-    <div className="flex items-start gap-3 rounded-xl bg-slate-50 px-3 py-3">
-      <Icon className="w-4 h-4 text-[#0E4C92] mt-1" />
-      <div>
-        <p className="text-xs uppercase tracking-wide text-slate-500">{label}</p>
-        <p className="text-sm text-slate-800 break-all">{value}</p>
+        )}
       </div>
     </div>
   );
 }
-
-function InfoCard({ icon: Icon, title, value, description }) {
-  return (
-    <div className="rounded-xl border border-slate-200 p-4">
-      <div className="flex items-center gap-3">
-        <div className="bg-blue-50 text-[#0E4C92] rounded-lg p-2">
-          <Icon className="w-5 h-5" />
-        </div>
-        <div>
-          <p className="text-sm text-slate-500">{title}</p>
-          <p className="text-lg font-semibold text-slate-900">{value}</p>
-        </div>
-      </div>
-      <p className="text-sm text-slate-500 mt-3">{description}</p>
-    </div>
-  );
-}
-
-DetailRow.propTypes = {
-  icon: PropTypes.elementType.isRequired,
-  label: PropTypes.string.isRequired,
-  value: PropTypes.string.isRequired,
-};
-
-InfoCard.propTypes = {
-  icon: PropTypes.elementType.isRequired,
-  title: PropTypes.string.isRequired,
-  value: PropTypes.string.isRequired,
-  description: PropTypes.string.isRequired,
-};

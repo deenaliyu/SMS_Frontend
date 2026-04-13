@@ -1,25 +1,29 @@
-import React, { useState } from "react";
+import { useState } from "react";
+import { Menu } from "lucide-react";
 import Sidebar from "../SideBar/SideBar";
-import { List } from "lucide-react";
 
 export default function Layout({ children, activeTab }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
-      {/* Mobile toggle icon */}
-      <button
-        onClick={() => setSidebarOpen(true)}
-        className="lg:hidden fixed top-4 right-4 z-50 bg-white p-2 rounded shadow cursor-pointer"
-      >
-        <List className="w-6 h-6 text-gray-700" />
-      </button>
-
-      {/* Sidebar */}
+    <div className="flex min-h-screen bg-slate-50">
       <Sidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} activeTab={activeTab} />
 
-      {/* Page Content */}
-      <main className="flex-1 p-6">{children}</main>
+      {/* Mobile toggle */}
+      <button
+        type="button"
+        onClick={() => setSidebarOpen(true)}
+        className="lg:hidden fixed top-4 left-4 z-30 p-2 bg-white rounded-lg shadow-md border border-gray-200 cursor-pointer"
+      >
+        <Menu className="w-5 h-5 text-gray-700" />
+      </button>
+
+      {/* Main content */}
+      <main className="flex-1 min-w-0 overflow-y-auto">
+        <div className="p-4 sm:p-6 lg:p-7 max-w-[1600px] mx-auto">
+          {children}
+        </div>
+      </main>
     </div>
   );
 }
