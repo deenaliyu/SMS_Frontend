@@ -1,0 +1,17 @@
+
+@media (max-width:700px) {
+    .blogsection {
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height: 100%;
+    }
+
+    .imageSection {
+        width: 100%;
+    }
+
+    .imageSection img {
+        width: 100%;
+    }
+}
