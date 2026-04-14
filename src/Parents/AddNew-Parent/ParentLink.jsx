@@ -1,38 +1,19 @@
 import { useState } from "react";
-import { Bell, ChevronDown, X } from "lucide-react";
+import { ChevronDown, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Layout from "../../components/Layout/Layout";
 import { smsApi } from "../../services/smsApi";
 import { clearParentDraft, getParentDraft, saveParentDraft } from "../../utils/parentDraft";
-import { getProfileAvatar } from "../../utils/profileAvatar";
+import { PageHeader, Btn, SuccessModal, ModalShell, FormField } from "../../components/ui/index.jsx";
 
-const studentOptions = [
-  "1 Student",
-  "2 Students",
-  "3 Students",
-  "4 Students",
-  "5 Students",
-  "6 Students",
-  "7 Students",
-  "8 Students",
-  "9 Students",
-  "10+ Students",
+const STUDENT_OPTIONS = [
+  "1 Student","2 Students","3 Students","4 Students","5 Students",
+  "6 Students","7 Students","8 Students","9 Students","10+ Students",
 ];
 
-const getInitialFormData = () => {
-  const draft = getParentDraft();
-
-  return {
-    numberOfStudents: draft.numberOfStudents || "",
-    linkedStudentIds: Array.isArray(draft.linkedStudentIds) ? draft.linkedStudentIds : [],
-  };
-};
-
 function buildParentPayload(draft) {
-  const numberOfStudents = String(draft.numberOfStudents || "").trim();
-  const studentCountMatch = numberOfStudents.match(/\d+/);
-  const students = studentCountMatch ? Number(studentCountMatch[0]) : 0;
-
+  const match = String(draft.numberOfStudents || "").match(/\d+/);
+  const students = match ? Number(match[0]) : 0;
   return {
     id: draft.id || Date.now(),
     title: draft.title,
@@ -53,263 +34,192 @@ function buildParentPayload(draft) {
     address: draft.address,
     username: draft.username,
     password: draft.password,
-    repeatPassword: draft.repeatPassword,
-    numberOfStudents,
+    numberOfStudents: draft.numberOfStudents,
     students,
     linkedStudentIds: Array.isArray(draft.linkedStudentIds) ? draft.linkedStudentIds : [],
   };
 }
 
-const StudentWardDetails = () => {
+function getInitialFormData() {
+  const draft = getParentDraft();
+  return {
+    numberOfStudents: draft.numberOfStudents || "",
+    linkedStudentIds: Array.isArray(draft.linkedStudentIds) ? draft.linkedStudentIds : [],
+  };
+}
+
+export default function StudentWardDetails() {
   const navigate = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [formData, setFormData] = useState(getInitialFormData);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [studentId, setStudentId] = useState("");
-  const [formData, setFormData] = useState(getInitialFormData);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const [successMessage, setSuccessMessage] = useState("Parent added successfully.");
 
-  const handleInputChange = (field, value) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
+  function handleInputChange(field, value) {
+    setFormData((p) => ({ ...p, [field]: value }));
+    if (errorMessage) setErrorMessage("");
+  }
 
-    if (errorMessage) {
-      setErrorMessage("");
-    }
-  };
-
-  const selectOption = (value) => {
-    handleInputChange("numberOfStudents", value);
-    setDropdownOpen(false);
-  };
-
-  const handleCloseLinkModal = () => {
+  function handleLinkStudentSubmit() {
+    const trimmed = studentId.trim();
+    if (!trimmed) return;
+    const nextIds = Array.from(new Set([...formData.linkedStudentIds, trimmed]));
+    setFormData((p) => ({ ...p, linkedStudentIds: nextIds }));
     setShowLinkModal(false);
     setStudentId("");
-  };
+  }
 
-  const handleLinkStudentSubmit = () => {
-    const trimmed = studentId.trim();
+  function removeLinked(id) {
+    setFormData((p) => ({ ...p, linkedStudentIds: p.linkedStudentIds.filter((i) => i !== id) }));
+  }
 
-    if (!trimmed) {
-      return;
-    }
-
-    const nextIds = Array.from(new Set([...formData.linkedStudentIds, trimmed]));
-    setFormData((prev) => ({ ...prev, linkedStudentIds: nextIds }));
-    handleCloseLinkModal();
-  };
-
-  const handleNext = async () => {
+  async function handleFinish() {
     if (!formData.numberOfStudents) {
-      setErrorMessage("Please select number of students/wards.");
+      setErrorMessage("Please select the number of students/wards.");
       return;
     }
-
     const draft = saveParentDraft(formData);
     const payload = buildParentPayload(draft);
-
     setIsSubmitting(true);
     setErrorMessage("");
-
     try {
       await smsApi.createParent(payload);
       clearParentDraft();
-      setSuccessMessage("Parent added and saved successfully.");
       setShowSuccessModal(true);
-    } catch (error) {
-      setErrorMessage(error.message || "Unable to add parent to backend.");
+    } catch (err) {
+      setErrorMessage(err.message || "Unable to add parent.");
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }
 
   return (
     <Layout activeTab="Parents">
-      <div className="flex min-h-screen bg-gray-50">
-        {sidebarOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
-        )}
+      <PageHeader
+        title="Add New Parent"
+        subtitle="Step 4 of 4 — Student / Ward Details"
+        breadcrumbs={[
+          { label: "Parents", onClick: () => navigate("/parents") },
+          { label: "Add New", onClick: () => navigate("/parents/new") },
+          { label: "Ward Details" },
+        ]}
+      />
 
-        <main className={`flex-1 lg:ml-0 ${showLinkModal || showSuccessModal ? "blur-sm" : ""}`}>
-          <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <button className="lg:hidden p-2 rounded-md hover:bg-gray-100" onClick={() => setSidebarOpen(true)}>
-                  <div className="w-5 h-5 flex flex-col justify-between">
-                    <div className="w-full h-0.5 bg-gray-600"></div>
-                    <div className="w-full h-0.5 bg-gray-600"></div>
-                    <div className="w-full h-0.5 bg-gray-600"></div>
-                  </div>
-                </button>
-                <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Add New Parent</h1>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <button className="p-2 rounded-full hover:bg-gray-100">
-                  <Bell className="w-5 h-5 sm:w-6 sm:h-6 text-gray-400" />
-                </button>
-                <div className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 rounded-lg p-1">
-                  <img src={getProfileAvatar("School Admin", "Admin")} alt="Profile" className="w-8 h-8 rounded-full object-cover" />
-                  <div className="text-sm hidden sm:block">
-                    <div className="font-medium text-gray-900">Danlomi Sule</div>
-                    <div className="text-gray-500">Admin</div>
-                  </div>
-                </div>
-              </div>
+      {/* Step indicator */}
+      <div className="flex items-center gap-2 mb-6">
+        {["Basic Info", "Address", "Login", "Wards"].map((step, i) => (
+          <div key={step} className="flex items-center gap-2">
+            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${i < 3 ? "bg-green-600 text-white" : "bg-green-600 text-white ring-4 ring-green-100"}`}>
+              {i < 3 ? "✓" : 4}
             </div>
-          </header>
-
-          <div className="p-4 sm:p-6">
-            <nav className="flex items-center gap-2 text-sm text-gray-500 mb-6">
-              <span className="text-gray-900 font-medium">Add New Parent</span>
-            </nav>
-
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-              <div className="p-4 sm:p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-6">Student/Ward Details</h3>
-
-                <div className="space-y-6">
-                  <div className="flex flex-col lg:flex-row lg:items-end gap-4">
-                    <div className="flex-1">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">How Many Students/Wards Do you have?</label>
-                      <div className="relative">
-                        <button
-                          type="button"
-                          onClick={() => setDropdownOpen((prev) => !prev)}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-md bg-white text-left flex items-center justify-between"
-                        >
-                          <span className={formData.numberOfStudents ? "text-gray-900" : "text-gray-500"}>
-                            {formData.numberOfStudents || "Select--"}
-                          </span>
-                          <ChevronDown className={`w-5 h-5 text-gray-400 ${dropdownOpen ? "rotate-180" : ""}`} />
-                        </button>
-
-                        {dropdownOpen && (
-                          <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
-                            {studentOptions.map((option) => (
-                              <button
-                                key={option}
-                                type="button"
-                                onClick={() => selectOption(option)}
-                                className="w-full px-4 py-2 text-left hover:bg-gray-50"
-                              >
-                                {option}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="lg:ml-4">
-                      <button
-                        onClick={() => setShowLinkModal(true)}
-                        className="w-full lg:w-auto px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700"
-                      >
-                        Link Student/Ward
-                      </button>
-                    </div>
-                  </div>
-
-                  {formData.linkedStudentIds.length > 0 && (
-                    <div className="p-3 border rounded-md bg-gray-50">
-                      <p className="text-sm text-gray-700 font-medium">Linked Student IDs:</p>
-                      <p className="text-sm text-gray-600">{formData.linkedStudentIds.join(", ")}</p>
-                    </div>
-                  )}
-                </div>
-
-                {errorMessage && <p className="text-red-600 text-sm mt-5">{errorMessage}</p>}
-
-                <div className="flex flex-col sm:flex-row justify-between gap-4 mt-8 pt-6 border-t border-gray-200">
-                  <button
-                    onClick={() => navigate("/parents/new/login")}
-                    className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
-                  >
-                    Previous
-                  </button>
-                  <button
-                    onClick={handleNext}
-                    disabled={isSubmitting}
-                    className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-60"
-                  >
-                    {isSubmitting ? "Saving..." : "Finish"}
-                  </button>
-                </div>
-              </div>
-            </div>
+            <span className={`text-xs font-medium hidden sm:block ${i === 3 ? "text-gray-900" : "text-gray-400"}`}>{step}</span>
+            {i < 3 && <div className="w-8 h-0.5 bg-green-500 rounded" />}
           </div>
-        </main>
-
-        {showLinkModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 shadow-2xl">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-gray-900">Input Student ID Number</h2>
-                <button onClick={handleCloseLinkModal} className="p-1 rounded-md hover:bg-gray-100">
-                  <X className="w-5 h-5 text-gray-500" />
-                </button>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Id Number</label>
-                  <input
-                    type="text"
-                    placeholder="Id Number"
-                    value={studentId}
-                    onChange={(event) => setStudentId(event.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-md"
-                  />
-                </div>
-
-                <button
-                  onClick={handleLinkStudentSubmit}
-                  className="w-full py-3 bg-green-600 text-white rounded-md hover:bg-green-700 font-medium"
-                >
-                  Link Student
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {showSuccessModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 text-center shadow-2xl">
-              <div className="w-16 h-16 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-6">
-                <div className="w-10 h-10 bg-green-500 rounded-md flex items-center justify-center">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-              </div>
-
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">Parent saved!</h2>
-              <p className="text-gray-600 mb-6 text-sm leading-relaxed">{successMessage}</p>
-
-              <button
-                onClick={() => {
-                  setShowSuccessModal(false);
-                  setErrorMessage("");
-                  navigate("/parents");
-                }}
-                className="w-full bg-green-600 text-white py-3 px-4 rounded-md hover:bg-green-700 font-medium"
-              >
-                Back To Parent List
-              </button>
-            </div>
-          </div>
-        )}
+        ))}
       </div>
+
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 max-w-2xl">
+        <h2 className="font-bold text-gray-900 mb-5">Student / Ward Details</h2>
+
+        <div className="space-y-5">
+          {/* Number of students */}
+          <FormField label="How many students/wards do you have?" required>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setDropdownOpen((p) => !p)}
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-left flex items-center justify-between bg-white cursor-pointer"
+              >
+                <span className={formData.numberOfStudents ? "text-gray-800" : "text-gray-400"}>
+                  {formData.numberOfStudents || "Select…"}
+                </span>
+                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${dropdownOpen ? "rotate-180" : ""}`} />
+              </button>
+              {dropdownOpen && (
+                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden max-h-52 overflow-y-auto">
+                  {STUDENT_OPTIONS.map((opt) => (
+                    <button
+                      key={opt}
+                      type="button"
+                      onClick={() => { handleInputChange("numberOfStudents", opt); setDropdownOpen(false); }}
+                      className={`w-full px-4 py-2.5 text-sm text-left hover:bg-green-50 cursor-pointer ${formData.numberOfStudents === opt ? "bg-green-50 text-green-700 font-medium" : ""}`}
+                    >
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </FormField>
+
+          {/* Link student */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm font-medium text-gray-700">Linked Student IDs</p>
+              <Btn size="sm" variant="ghost" onClick={() => setShowLinkModal(true)}>+ Link Student</Btn>
+            </div>
+            {formData.linkedStudentIds.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {formData.linkedStudentIds.map((id) => (
+                  <div key={id} className="flex items-center gap-1.5 px-3 py-1 bg-green-50 border border-green-200 rounded-xl text-sm text-green-800">
+                    <span className="font-mono text-xs">{id}</span>
+                    <button type="button" onClick={() => removeLinked(id)} className="text-green-500 hover:text-green-700 cursor-pointer">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-400 italic">No students linked yet.</p>
+            )}
+          </div>
+
+          {errorMessage && (
+            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-3 py-2">{errorMessage}</p>
+          )}
+        </div>
+
+        {/* Actions */}
+        <div className="flex justify-between mt-6 pt-5 border-t border-gray-100">
+          <Btn variant="secondary" onClick={() => navigate("/parents/new/login")}>← Previous</Btn>
+          <Btn disabled={isSubmitting} onClick={handleFinish}>
+            {isSubmitting ? "Saving…" : "Finish & Save Parent"}
+          </Btn>
+        </div>
+      </div>
+
+      {/* Link modal */}
+      {showLinkModal && (
+        <ModalShell title="Link Student" onClose={() => setShowLinkModal(false)} size="sm">
+          <FormField label="Student ID Number" required>
+            <input
+              type="text"
+              placeholder="e.g. STU001"
+              value={studentId}
+              onChange={(e) => setStudentId(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleLinkStudentSubmit()}
+              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-400"
+            />
+          </FormField>
+          <div className="flex gap-3 mt-4">
+            <Btn variant="secondary" className="flex-1" onClick={() => setShowLinkModal(false)}>Cancel</Btn>
+            <Btn className="flex-1" onClick={handleLinkStudentSubmit} disabled={!studentId.trim()}>Link Student</Btn>
+          </div>
+        </ModalShell>
+      )}
+
+      {/* Success modal */}
+      {showSuccessModal && (
+        <SuccessModal
+          title="Parent Saved!"
+          message="The parent record has been saved successfully. You can now view them in the Parents list."
+          buttonLabel="Back to Parents"
+          onClose={() => navigate("/parents")}
+        />
+      )}
     </Layout>
   );
-};
-
-export default StudentWardDetails;
+}

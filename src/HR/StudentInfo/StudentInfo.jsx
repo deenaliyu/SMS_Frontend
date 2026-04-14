@@ -1,201 +1,174 @@
-"use client"
-
 import { useState } from "react";
-import {
-  LayoutDashboard,
-  Users,
-  User,
-  MessageCircle,
-  CalendarDays,
-  DollarSign,
-  Bell,
-  ClipboardList,
-  BookOpenCheck,
-  Settings,
-  LogOut,
-  Menu,
-  X,
-  Check,
-} from "lucide-react";
+import { Check, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import Sidebar from "../../components/SideBar/SideBar"; // Use the shared Sidebar
+import Layout from "../../components/Layout/Layout";
+import { Btn, Badge, ModalShell } from "../../components/ui/index.jsx";
 
-export default function AdmissionDetail() {
-  const [activeTab, setActiveTab] = useState("student");
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [showAcceptModal, setShowAcceptModal] = useState(false);
-  const [showRejectModal, setShowRejectModal] = useState(false);
-  const navigate = useNavigate();
-
-  const handleAccept = () => setShowAcceptModal(true);
-  const handleReject = () => setShowRejectModal(true);
-  const handleBackToDashboard = () => {
-    setShowAcceptModal(false);
-    setShowRejectModal(false);
-    navigate("/HrDashboard");
-  };
-
+function Field({ label, value }) {
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      {/* Sidebar */}
-      <Sidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} activeTab="HR" />
-      {/* Main Content */}
-      <main className={`flex-1 p-6 ${showAcceptModal || showRejectModal ? "blur-sm" : ""}`}>
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Danjuma Danlami</h1>
-          <div className="space-x-2">
-            <button
-              onClick={handleAccept}
-              className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition cursor-pointer"
-            >
-              Accept
-            </button>
-            <button
-              onClick={handleReject}
-              className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition cursor-pointer"
-            >
-              Reject
-            </button>
-          </div>
-        </div>
-
-        {/* Breadcrumbs */}
-        <div className="text-sm text-gray-500 mb-4">
-          <span onClick={() => navigate("/HrDashboard")} className="text-gray-700 cursor-pointer hover:underline">
-            HR-Dashboard
-          </span>
-          <span className="mx-1">&gt;</span>
-          <span className="text-gray-400">Quick Links</span>
-          <span className="mx-1">&gt;</span>
-          <span onClick={() => navigate("/admission")} className="text-gray-700 cursor-pointer hover:underline">
-            Admission
-          </span>
-          <span className="mx-1">&gt;</span>
-          <span className="text-black font-medium">Danjuma Danlami</span>
-        </div>
-
-        {/* Tabs */}
-        <div className="flex space-x-4 border-b mb-6">
-          <button
-            className={`pb-2 border-b-2 font-medium text-sm ${activeTab === "student" ? "border-green-500 text-green-600" : "text-gray-500 hover:text-black"}`}
-            onClick={() => setActiveTab("student")}
-          >
-            Student Info
-          </button>
-          <button
-            className={`pb-2 border-b-2 font-medium text-sm ${activeTab === "parent" ? "border-green-500 text-green-600" : "text-gray-500 hover:text-black"}`}
-            onClick={() => setActiveTab("parent")}
-          >
-            Parent/Guardian Info
-          </button>
-        </div>
-
-        {/* Student Info Form */}
-        {activeTab === "student" && (
-          <div className="bg-white p-6 rounded-lg shadow border">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-              <Input label="Admission Number" value="600" />
-              <Input label="Admission Date" value="14/3/2024" />
-              <Input label="Class" value="SS 1" />
-              <Input label="First Name" value="Danlami" />
-              <Input label="Middle Name" value="Nil" />
-              <Input label="Last Name" value="Danjuma" />
-              <Input label="Date of Birth" value="01/03/2008" />
-              <Input label="Gender" value="Male" />
-              <Input label="Address" value="123 Nassarawa GRA, Kano" />
-              <Input label="State" value="Kano" />
-              <Input label="Email" value="danjumadanlami2008@gmail.com" />
-              <Input label="LGA" value="Nasarawa" />
-              <Input label="Mobile number" value="08121345678" />
-              <Input label="Previous School" value="Jubril Memorial School" />
-            </div>
-          </div>
-        )}
-
-        {/* Parent Info */}
-        {activeTab === "parent" && (
-          <div className="bg-white p-6 rounded-lg shadow border text-sm">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Input label="Title" value="Mr" />
-              <Input label="First Name" value="DanJuma" />
-              <Input label="Middle Name" value="Nit" />
-              <Input label="Last Name" value="Alfa" />
-              <Input label="Date of Birth" value="01/12/1973" />
-              <Input label="Gender" value="Male" />
-              <Input label="Address" value="123 Nassarawa GRA, Kano" />
-              <Input label="State" value="Kano" />
-              <Input label="LGA*" value="Nasarawa" />
-              <Input label="Email" value="danjumaalfa@gmail.com" />
-              <Input label="Mobile number" value="09012345678" />
-              <Input label="Educational Qualification" value="Msc. Cyber Security" />
-              <Input label="Occupation" value="Civil Servant" />
-              <Input label="Annual Income" value="N2,345,213" />
-            </div>
-          </div>
-        )}
-      </main>
-
-      {/* Accept Modal */}
-      {showAcceptModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-20 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 text-center shadow-2xl">
-            <div className="w-16 h-16 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-              <Check className="w-8 h-8 text-green-600" />
-            </div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Accepted!</h2>
-            <p className="text-gray-600 mb-6 text-sm leading-relaxed">
-              Admission request has been approved successfully!
-              <br />a notification has been sent to the applicant and the
-              <br />
-              guardians email respectively.
-            </p>
-            <button
-              onClick={handleBackToDashboard}
-              className="w-full bg-green-500 text-white py-3 px-4 rounded-md hover:bg-green-600 transition font-medium"
-            >
-              Back To HR Dashboard
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Reject Modal */}
-      {showRejectModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-20 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4 text-center shadow-2xl">
-            <div className="w-16 h-16 bg-red-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-              <X className="w-8 h-8 text-red-600" />
-            </div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Rejected!</h2>
-            <p className="text-gray-600 mb-6 text-sm leading-relaxed">
-              Admission request has been rejected!
-              <br />a notification has been sent to the applicant and the
-              <br />
-              guardians email respectively.
-            </p>
-            <button
-              onClick={handleBackToDashboard}
-              className="w-full bg-green-500 text-white py-3 px-4 rounded-md hover:bg-green-600 transition font-medium"
-            >
-              Back To HR Dashboard
-            </button>
-          </div>
-        </div>
-      )}
+    <div>
+      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{label}</label>
+      <div className="w-full px-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50 text-sm text-gray-800">
+        {value || "—"}
+      </div>
     </div>
   );
 }
 
-function Input({ label, value }) {
+const STUDENT = {
+  admissionNumber: "600", admissionDate: "14/3/2024", class: "SS 1",
+  firstName: "Danlami", middleName: "Nil", lastName: "Danjuma",
+  dateOfBirth: "01/03/2008", gender: "Male", address: "123 Nassarawa GRA, Kano",
+  state: "Kano", email: "danjumadanlami2008@gmail.com", lga: "Nasarawa",
+  mobileNumber: "08121345678", previousSchool: "Jubril Memorial School",
+};
+
+const PARENT = {
+  title: "Mr", firstName: "DanJuma", middleName: "Nil", lastName: "Alfa",
+  dateOfBirth: "01/12/1973", gender: "Male", address: "123 Nassarawa GRA, Kano",
+  state: "Kano", lga: "Nasarawa", email: "danjumaalfa@gmail.com",
+  mobileNumber: "09012345678", educationalQualification: "Msc. Cyber Security",
+  occupation: "Civil Servant", annualIncome: "₦2,345,213",
+};
+
+export default function AdmissionDetail() {
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState("student");
+  const [modal, setModal] = useState(null); // "accept" | "reject" | null
+
+  function handleBack() {
+    setModal(null);
+    navigate("/hr/admission-management");
+  }
+
   return (
-    <div>
-      <label className="block font-medium text-gray-700 mb-1">{label}</label>
-      <input
-        type="text"
-        value={value}
-        readOnly
-        className="w-full px-4 py-2 border rounded bg-gray-100 cursor-not-allowed"
-      />
-    </div>
+    <Layout activeTab="HR">
+      {/* Page header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div>
+          <nav className="flex items-center gap-1.5 text-xs text-gray-400 mb-1">
+            <button type="button" onClick={() => navigate("/hr")} className="hover:text-gray-600 cursor-pointer">HR Dashboard</button>
+            <span>/</span>
+            <button type="button" onClick={() => navigate("/hr/admission-management")} className="hover:text-gray-600 cursor-pointer">Admission</button>
+            <span>/</span>
+            <span className="text-gray-700 font-medium">Danjuma Danlami</span>
+          </nav>
+          <h1 className="text-2xl font-bold text-gray-900">Danjuma Danlami</h1>
+          <p className="text-sm text-gray-500 mt-0.5">Admission No. 600 · SS 1</p>
+        </div>
+        <div className="flex gap-2">
+          <Btn variant="primary" onClick={() => setModal("accept")}>
+            <Check className="w-4 h-4" /> Accept
+          </Btn>
+          <Btn variant="danger" onClick={() => setModal("reject")}>
+            <X className="w-4 h-4" /> Reject
+          </Btn>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-1 border-b border-gray-200 mb-6">
+        {[["student", "Student Info"], ["parent", "Parent / Guardian Info"]].map(([key, label]) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => setActiveTab(key)}
+            className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors cursor-pointer ${activeTab === key ? "border-green-500 text-green-700" : "border-transparent text-gray-500 hover:text-gray-700"}`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* Student Info */}
+      {activeTab === "student" && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <Field label="Admission Number" value={STUDENT.admissionNumber} />
+            <Field label="Admission Date" value={STUDENT.admissionDate} />
+            <Field label="Class" value={STUDENT.class} />
+            <Field label="First Name" value={STUDENT.firstName} />
+            <Field label="Middle Name" value={STUDENT.middleName} />
+            <Field label="Last Name" value={STUDENT.lastName} />
+            <Field label="Date of Birth" value={STUDENT.dateOfBirth} />
+            <Field label="Gender" value={STUDENT.gender} />
+            <Field label="State" value={STUDENT.state} />
+            <Field label="LGA" value={STUDENT.lga} />
+            <Field label="Mobile Number" value={STUDENT.mobileNumber} />
+            <Field label="Previous School" value={STUDENT.previousSchool} />
+            <div className="sm:col-span-2 lg:col-span-3">
+              <Field label="Address" value={STUDENT.address} />
+            </div>
+            <div className="sm:col-span-2 lg:col-span-3">
+              <Field label="Email" value={STUDENT.email} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Parent Info */}
+      {activeTab === "parent" && (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <Field label="Title" value={PARENT.title} />
+            <Field label="First Name" value={PARENT.firstName} />
+            <Field label="Middle Name" value={PARENT.middleName} />
+            <Field label="Last Name" value={PARENT.lastName} />
+            <Field label="Date of Birth" value={PARENT.dateOfBirth} />
+            <Field label="Gender" value={PARENT.gender} />
+            <Field label="State" value={PARENT.state} />
+            <Field label="LGA" value={PARENT.lga} />
+            <Field label="Mobile Number" value={PARENT.mobileNumber} />
+            <Field label="Education" value={PARENT.educationalQualification} />
+            <Field label="Occupation" value={PARENT.occupation} />
+            <Field label="Annual Income" value={PARENT.annualIncome} />
+            <div className="sm:col-span-2 lg:col-span-3">
+              <Field label="Address" value={PARENT.address} />
+            </div>
+            <div className="sm:col-span-2 lg:col-span-3">
+              <Field label="Email" value={PARENT.email} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Accept Modal */}
+      {modal === "accept" && (
+        <ModalShell title="Confirm Acceptance" onClose={() => setModal(null)} size="sm">
+          <div className="text-center py-4">
+            <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Check className="w-7 h-7 text-green-600" />
+            </div>
+            <h3 className="font-bold text-gray-900 mb-2">Accept Admission</h3>
+            <p className="text-sm text-gray-500 mb-6">
+              Approving the admission request for <strong>Danjuma Danlami</strong>. A notification will be sent to the applicant and guardian.
+            </p>
+            <div className="flex gap-3">
+              <Btn variant="secondary" className="flex-1" onClick={() => setModal(null)}>Cancel</Btn>
+              <Btn variant="primary" className="flex-1" onClick={handleBack}>Confirm Acceptance</Btn>
+            </div>
+          </div>
+        </ModalShell>
+      )}
+
+      {/* Reject Modal */}
+      {modal === "reject" && (
+        <ModalShell title="Confirm Rejection" onClose={() => setModal(null)} size="sm">
+          <div className="text-center py-4">
+            <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <X className="w-7 h-7 text-red-600" />
+            </div>
+            <h3 className="font-bold text-gray-900 mb-2">Reject Admission</h3>
+            <p className="text-sm text-gray-500 mb-6">
+              Rejecting the admission request for <strong>Danjuma Danlami</strong>. A notification will be sent to the applicant and guardian.
+            </p>
+            <div className="flex gap-3">
+              <Btn variant="secondary" className="flex-1" onClick={() => setModal(null)}>Cancel</Btn>
+              <Btn variant="danger" className="flex-1" onClick={handleBack}>Confirm Rejection</Btn>
+            </div>
+          </div>
+        </ModalShell>
+      )}
+    </Layout>
   );
 }

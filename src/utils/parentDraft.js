@@ -1,41 +1,13 @@
-const PARENT_DRAFT_KEY = "parent-onboarding-draft";
-
-function isBrowser() {
-  return typeof window !== "undefined";
-}
-
+const KEY = "parent-add-draft-v1";
 export function getParentDraft() {
-  if (!isBrowser()) {
-    return {};
-  }
-
-  const raw = window.localStorage.getItem(PARENT_DRAFT_KEY);
-  if (!raw) {
-    return {};
-  }
-
+  try { return JSON.parse(localStorage.getItem(KEY) || "null") || {}; } catch { return {}; }
+}
+export function saveParentDraft(data) {
   try {
-    const parsed = JSON.parse(raw);
-    return parsed && typeof parsed === "object" ? parsed : {};
-  } catch {
-    return {};
-  }
+    const existing = getParentDraft();
+    localStorage.setItem(KEY, JSON.stringify({ ...existing, ...data }));
+  } catch { /* noop */ }
 }
-
-export function saveParentDraft(updates) {
-  if (!isBrowser()) {
-    return updates;
-  }
-
-  const nextDraft = { ...getParentDraft(), ...updates };
-  window.localStorage.setItem(PARENT_DRAFT_KEY, JSON.stringify(nextDraft));
-  return nextDraft;
-}
-
 export function clearParentDraft() {
-  if (!isBrowser()) {
-    return;
-  }
-
-  window.localStorage.removeItem(PARENT_DRAFT_KEY);
+  try { localStorage.removeItem(KEY); } catch { /* noop */ }
 }

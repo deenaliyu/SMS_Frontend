@@ -119,7 +119,7 @@ export default function Sidebar({ isOpen, setIsOpen, activeTab }) {
       <aside
         className={`
           fixed lg:static top-0 left-0 z-50
-          flex flex-col h-screen
+          flex flex-col
           transition-all duration-300
           ${isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
           ${compact ? "w-16" : "w-64"}

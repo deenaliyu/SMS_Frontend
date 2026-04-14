@@ -1,0 +1,1 @@
+export { MainEvent as default } from "../components/eventPages.jsx";

@@ -1,0 +1,1 @@
+export { EventModal as default } from "../components/eventPages.jsx";

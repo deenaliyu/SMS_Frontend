@@ -54,7 +54,7 @@ import AddStudents from "./Students/AddStudent/AddStudents";
 import MessagePage from "./Messaging/MessagePage/MessagePage";
 
 import EventPage from "./Events/EventPage/EventPage";
-import AddEventPage from "./Events/EventComponent/AddEvent/AddEvent";
+import AddEventPage from "./Events/AddEvent/AddEvent";
 import EventCalender from "./Events/EventComponent/EventCalender/EventCalender";
 
 import FinancePage from "./Finance/MainPage/FinancePage";

@@ -1,0 +1,1 @@
+export { AddEvent as default } from "../components/eventPages.jsx";

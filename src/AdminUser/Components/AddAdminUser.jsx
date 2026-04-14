@@ -1,246 +1,124 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { adminRoles } from "../AdminData";
 import { isSuperAdminEmail } from "../../config/accessControl";
+import { adminRoles } from "../AdminData";
 import Layout from "../../components/Layout/Layout";
 import { smsApi } from "../../services/smsApi";
 import { getAuthUser } from "../../utils/authSession";
+import {
+  PageHeader, FormField, Input, Select, Btn, SuccessModal,
+} from "../../components/ui/index";
 
-const initialFormData = {
-  userName: "",
-  fullName: "",
-  email: "",
-  password: "",
-  role: "",
-  activity: "",
-};
+const INIT = { userName: "", fullName: "", email: "", password: "", role: "", activity: "" };
 
-export default function AddAdminUser() {
+function AddAdminUser() {
   const navigate = useNavigate();
   const authUser = getAuthUser();
-  const [formData, setFormData] = useState(initialFormData);
+  const [form, setForm] = useState(INIT);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [message, setMessage] = useState("");
-  const [errorMessage, setErrorMessage] = useState("");
+  const [error, setError] = useState("");
+  const [showSuccess, setShowSuccess] = useState(false);
 
-  const roleOptions = useMemo(() => adminRoles, []);
+  const isSuperAdmin = isSuperAdminEmail(form.email);
 
-  const handleChange = (event) => {
-    const { name, value } = event.target;
+  function handleChange(e) {
+    const { name, value } = e.target;
+    setForm((p) => ({ ...p, [name]: value }));
+    if (error) setError("");
+  }
 
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-
-    if (message) {
-      setMessage("");
+  async function handleSubmit() {
+    if (!form.userName || !form.fullName || !form.email || !form.password || !form.role || !form.activity) {
+      setError("Please fill all fields before adding user."); return;
     }
 
-    if (errorMessage) {
-      setErrorMessage("");
-    }
-  };
-
-  const buildPayload = () => {
-    const superAdmin = isSuperAdminEmail(formData.email);
-
-    return {
+    const payload = {
       id: Date.now(),
-      userName: formData.userName,
-      username: formData.userName,
-      fullName: formData.fullName,
-      email: formData.email.trim().toLowerCase(),
-      password: formData.password,
-      role: superAdmin ? "System Admin" : formData.role,
-      activity: superAdmin ? "Active" : formData.activity,
-      status: superAdmin ? "Active" : formData.activity,
+      userName: form.userName, username: form.userName,
+      fullName: form.fullName,
+      email: form.email.trim().toLowerCase(),
+      password: form.password,
+      role: isSuperAdmin ? "System Admin" : form.role,
+      activity: isSuperAdmin ? "Active" : form.activity,
+      status: isSuperAdmin ? "Active" : form.activity,
     };
-  };
 
-  const handleSubmit = async () => {
-    if (!authUser?.permissions?.["Admin Users"] && !String(authUser?.role || "").toLowerCase().includes("admin")) {
-      setErrorMessage("Only an admin user can create another admin user.");
-      return;
-    }
-
-    if (!formData.userName || !formData.fullName || !formData.email || !formData.password || !formData.role || !formData.activity) {
-      setErrorMessage("Please fill all fields before adding user.");
-      return;
-    }
-
-    const payload = buildPayload();
-
-    setIsSubmitting(true);
-    setErrorMessage("");
-
+    setIsSubmitting(true); setError("");
     try {
       await smsApi.createAdminUser(payload);
-      setMessage(
-        isSuperAdminEmail(payload.email)
-          ? "Super admin user saved with full access."
-          : "Admin user added successfully.",
-      );
-      setFormData(initialFormData);
-    } catch (error) {
-      setErrorMessage(error.message || "Unable to add admin user.");
+      setShowSuccess(true);
+      setForm(INIT);
+    } catch (err) {
+      setError(err.message || "Unable to add admin user.");
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }
 
   return (
     <Layout activeTab="Admin Users">
-      <div className="min-h-screen">
-        <div className="bg-white rounded-md p-4">
-          <div className="flex justify-between items-center mb-4">
-            <h1 className="font-bold text-2xl">Add Admin User</h1>
-            <div className="flex gap-4 items-center">
-              <p className="text-gray-400 text-sm cursor-pointer" onClick={() => navigate("/admin-users")}>
-                Admin User
-              </p>
-              <p className="text-gray-400 text-sm">{">"}</p>
-              <p className="font-medium text-sm">Add Admin Users</p>
-            </div>
+      <PageHeader
+        title="Add Admin User"
+        breadcrumbs={[{ label: "Admin Users", onClick: () => navigate("/admin-users") }, { label: "Add User" }]}
+      />
+
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 max-w-2xl">
+        {isSuperAdmin && (
+          <div className="mb-5 p-3 bg-green-50 border border-green-200 rounded-xl text-sm text-green-700 font-medium">
+            Super admin email detected — role and status will be set automatically.
+          </div>
+        )}
+
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <FormField label="Username" required>
+              <Input name="userName" value={form.userName} onChange={handleChange} placeholder="Username" />
+            </FormField>
+            <FormField label="Full Name" required>
+              <Input name="fullName" value={form.fullName} onChange={handleChange} placeholder="Full name" />
+            </FormField>
+            <FormField label="Email" required>
+              <Input type="email" name="email" value={form.email} onChange={handleChange} placeholder="Email address" />
+            </FormField>
+            <FormField label="Password" required>
+              <Input type="password" name="password" value={form.password} onChange={handleChange} placeholder="Password" />
+            </FormField>
+            <FormField label="Role" required>
+              <Select name="role" value={isSuperAdmin ? "System Admin" : form.role} onChange={handleChange} disabled={isSuperAdmin}>
+                <option value="">Select role</option>
+                {adminRoles.map((r) => <option key={r} value={r}>{r}</option>)}
+              </Select>
+            </FormField>
+            <FormField label="Status" required>
+              <Select name="activity" value={isSuperAdmin ? "Active" : form.activity} onChange={handleChange} disabled={isSuperAdmin}>
+                <option value="">Select status</option>
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+              </Select>
+            </FormField>
           </div>
 
-          <div className="p-2">
-            <div className="rounded-xl p-4 bg-white border border-gray-100">
-              <form onSubmit={(event) => event.preventDefault()}>
-                <div className="flex flex-col gap-5">
-                  <div className="flex gap-2">
-                    <div className="flex-1 flex flex-col gap-1">
-                      <label htmlFor="userName" className="text-sm font-medium">
-                        User Name
-                      </label>
-                      <input
-                        type="text"
-                        name="userName"
-                        id="userName"
-                        value={formData.userName}
-                        onChange={handleChange}
-                        placeholder="User name"
-                        className="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none"
-                      />
-                    </div>
+          {error && <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-600">{error}</div>}
 
-                    <div className="flex-1 flex flex-col gap-1">
-                      <label htmlFor="fullName" className="text-sm font-medium">
-                        Full Name
-                      </label>
-                      <input
-                        type="text"
-                        name="fullName"
-                        id="fullName"
-                        value={formData.fullName}
-                        onChange={handleChange}
-                        placeholder="Full name"
-                        className="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex gap-1">
-                    <div className="flex-1 flex flex-col gap-1">
-                      <label htmlFor="email" className="text-sm font-medium">
-                        Email
-                      </label>
-                      <input
-                        type="email"
-                        name="email"
-                        id="email"
-                        value={formData.email}
-                        onChange={handleChange}
-                        placeholder="Email"
-                        className="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none"
-                      />
-                    </div>
-
-                    <div className="flex-1 flex flex-col gap-1">
-                      <label htmlFor="password" className="text-sm font-medium">
-                        Password
-                      </label>
-                      <input
-                        type="password"
-                        name="password"
-                        id="password"
-                        value={formData.password}
-                        onChange={handleChange}
-                        placeholder="Password"
-                        className="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex gap-1">
-                    <div className="flex-1 flex flex-col gap-1">
-                      <label htmlFor="role" className="text-sm font-medium">
-                        Role
-                      </label>
-                      <select
-                        name="role"
-                        id="role"
-                        value={isSuperAdminEmail(formData.email) ? "System Admin" : formData.role}
-                        onChange={handleChange}
-                        className="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none"
-                        disabled={isSuperAdminEmail(formData.email)}
-                      >
-                        <option value="">Role</option>
-                        {roleOptions.map((role) => (
-                          <option key={role} value={role}>
-                            {role}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-1">
-                    <div className="flex flex-col gap-1 w-1/2">
-                      <label htmlFor="activity" className="text-sm font-medium">
-                        Activity (Active/in-active)
-                      </label>
-                      <select
-                        name="activity"
-                        id="activity"
-                        value={isSuperAdminEmail(formData.email) ? "Active" : formData.activity}
-                        onChange={handleChange}
-                        className="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none"
-                        disabled={isSuperAdminEmail(formData.email)}
-                      >
-                        <option value="">Select Status</option>
-                        <option value="Active">Active</option>
-                        <option value="Inactive">Inactive</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  {errorMessage && <p className="text-red-600 text-sm">{errorMessage}</p>}
-                  {message && <p className="text-green-600 text-sm">{message}</p>}
-
-                  <div className="flex justify-between items-center">
-                    <button
-                      className="py-2 px-8 border border-green-500 text-green-500 rounded-sm cursor-pointer hover:bg-green-500 hover:text-white"
-                      type="button"
-                    >
-                      Add Module Permission
-                    </button>
-
-                    <button
-                      className="py-2 px-5 bg-green-500 border border-green-500 rounded-sm cursor-pointer hover:bg-green-600 disabled:opacity-60"
-                      type="button"
-                      disabled={isSubmitting}
-                      onClick={handleSubmit}
-                    >
-                      {isSubmitting ? "Adding..." : "Add User"}
-                    </button>
-                  </div>
-                </div>
-              </form>
-            </div>
+          <div className="flex justify-between pt-2">
+            <Btn variant="ghost">Add Module Permission</Btn>
+            <Btn onClick={handleSubmit} disabled={isSubmitting}>
+              {isSubmitting ? "Adding…" : "Add User"}
+            </Btn>
           </div>
         </div>
       </div>
+
+      {showSuccess && (
+        <SuccessModal
+          title="Admin User Added!"
+          message={isSuperAdmin ? "Super admin user saved with full access." : "Admin user added successfully."}
+          buttonLabel="Back to Admin Users"
+          onClose={() => { setShowSuccess(false); navigate("/admin-users"); }}
+        />
+      )}
     </Layout>
   );
 }
+
+export default AddAdminUser;
